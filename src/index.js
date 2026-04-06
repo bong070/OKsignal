@@ -8,9 +8,7 @@ export default {
       return Response.json(result);
     } catch (err) {
       return new Response(
-        JSON.stringify({
-          error: String(err),
-        }),
+        JSON.stringify({ error: String(err) }),
         {
           status: 500,
           headers: { "content-type": "application/json" },
