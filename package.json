@@ -1,0 +1,11 @@
+{
+  "name": "oksignal-backend",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^4.80.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy"
+  }
+}
