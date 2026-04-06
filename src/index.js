@@ -11,7 +11,10 @@ export default {
         JSON.stringify({
           error: String(err),
         }),
-        { status: 500 }
+        {
+          status: 500,
+          headers: { "content-type": "application/json" },
+        }
       );
     }
   },
