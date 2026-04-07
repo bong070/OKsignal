@@ -4,7 +4,7 @@
 	"compatibility_date": "2026-04-05",
 	"d1_databases": [
 		{
-			"binding": "oksignal_db",
+			"binding": "DB",
 			"database_name": "oksignal-db",
 			"database_id": "7b670a87-358e-4906-98ed-d89a5ef8cc48",
 			"remote": true
