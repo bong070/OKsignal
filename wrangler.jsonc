@@ -4,10 +4,15 @@
 	"compatibility_date": "2026-04-05",
 	"d1_databases": [
 		{
-			"binding": "DB",
-			"database_name": "oksignal-db",
-			"database_id": "7b670a87-358e-4906-98ed-d89a5ef8cc48",
-			"remote": true
+		  "binding": "DB",
+		  "database_name": "oksignal_db",
+		  "database_id": "fae8d460-ce72-4497-8a26-a8453928eded",
+		  "remote": false
 		}
-	]
+	],
+	"triggers": {
+		"crons": [
+			"*/10 * * * *"
+		]
+	}
 }
