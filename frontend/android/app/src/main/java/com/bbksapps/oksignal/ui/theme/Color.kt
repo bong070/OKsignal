@@ -2,10 +2,17 @@ package com.bbksapps.oksignal.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val SignalGreen = Color(0xFF57B85A)
+val SignalRed = Color(0xFFE84A43)
+val SignalNeutral = Color(0xFFF5F5F5)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val AppBackgroundLight = Color(0xFFF8F8F8)
+val CardBackgroundLight = Color(0xFFFFFFFF)
+val TextPrimaryLight = Color(0xFF111111)
+val TextSecondaryLight = Color(0xFF666666)
+
+val AppBackgroundDark = Color(0xFF121212)
+val CardBackgroundDark = Color(0xFF1E1E1E)
+val TextPrimaryDark = Color(0xFFF5F5F5)
+val TextSecondaryDark = Color(0xFFB3B3B3)
+val CardBorderColor = Color.White.copy(alpha = 0.3f)
