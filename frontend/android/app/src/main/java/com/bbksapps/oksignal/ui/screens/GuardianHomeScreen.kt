@@ -48,6 +48,13 @@ import androidx.compose.foundation.layout.height
 import android.content.Intent
 import androidx.compose.runtime.LaunchedEffect
 import com.bbksapps.oksignal.data.repository.GuardianRepository
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 
 data class GuardianMemberUiModel(
     val displayName: String,
@@ -56,9 +63,12 @@ data class GuardianMemberUiModel(
     val isActive: Boolean
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuardianHomeScreen(
-    onMemberClick: (GuardianMemberUiModel) -> Unit = {}
+    guardianUserId: String,
+    onMemberClick: (GuardianMemberUiModel) -> Unit = {},
+    onLogout: () -> Unit
 ) {
     /*val mockMembers = listOf(
         GuardianMemberUiModel(
@@ -100,10 +110,11 @@ fun GuardianHomeScreen(
 
      */
 
+    var showAccountMenu by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
-
     val inviteRepository = remember { InviteRepository() }
-
     val guardianRepository = remember { GuardianRepository() }
 
     var members by remember { mutableStateOf<List<GuardianMemberUiModel>>(emptyList()) }
@@ -130,12 +141,9 @@ fun GuardianHomeScreen(
             putExtra(Intent.EXTRA_TEXT, link)
             type = "text/plain"
         }
-
         val shareIntent = Intent.createChooser(sendIntent, context.getString(R.string.share_invite_link))
         context.startActivity(shareIntent)
     }
-
-    val guardianUserId = "261b035a-0530-4b58-822b-49781e99b278"
 
     LaunchedEffect(guardianUserId) {
         try {
@@ -143,9 +151,6 @@ fun GuardianHomeScreen(
             loadError = null
 
             val response = guardianRepository.getGuardianMembers(guardianUserId)
-            response.members.forEach {
-                println("DEBUG member = $it")
-            }
             if (response.success) {
                 members = response.members.map { dto ->
                     GuardianMemberUiModel(
@@ -153,9 +158,7 @@ fun GuardianHomeScreen(
                         lastActive = dto.last_activity_at ?: context.getString(R.string.no_activity),
                         lastLocation = if (dto.last_known_lat != null && dto.last_known_lng != null) {
                             "${dto.last_known_lng}, ${dto.last_known_lat}"
-                        } else {
-                            null
-                        },
+                        } else null,
                         isActive = dto.last_activity_at != null
                     )
                 }
@@ -169,218 +172,274 @@ fun GuardianHomeScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF3F4F6))
-            .padding(Dimens.SpaceLg)
-    ) {
-        Text(
-            text = stringResource(R.string.guardian_home_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        if (isLoading) {
-            Text(
-                text = stringResource(R.string.loading_members),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = Dimens.SpaceSm)
-            )
-        }
-
-        loadError?.let { error ->
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = Dimens.SpaceSm)
-            )
-        }
-
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .weight(1f)
-                .padding(top = Dimens.SpaceMd)
-        ) { pageIndex ->
-            GuardianPageContent(
-                items = pages[pageIndex],
-                onMemberClick = onMemberClick,
-                onInviteClick = {
-                    coroutineScope.launch {
-                        try {
-                            val response = inviteRepository.createInvite(guardianUserId)
-
-                            if (response.success && !response.invite_link.isNullOrBlank()) {
-                                inviteResultText = response.invite_link
-                                inviteDialogText = response.invite_link
-                                inviteDialogIsError = false
-                            } else {
-                                inviteResultText = response.error ?: context.getString(R.string.invite_failed)
-                                inviteDialogText = response.error ?: context.getString(R.string.invite_failed)
-                                inviteDialogIsError = true
-                            }
-                        } catch (e: HttpException) {
-                            val errorBody = e.response()?.errorBody()?.string()
-                            val message = context.getString(
-                                R.string.http_error,
-                                e.code(),
-                                errorBody ?: e.message()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("OKSignal") },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showAccountMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Account"
                             )
-                            inviteResultText = message
-                            inviteDialogText = message
-                            inviteDialogIsError = true
-                        } catch (e: Exception) {
-                            inviteResultText = e.message ?: context.getString(R.string.unknown_error)
-                            inviteDialogText = e.message ?: context.getString(R.string.unknown_error)
-                            inviteDialogIsError = true
+                        }
+
+                        DropdownMenu(
+                            expanded = showAccountMenu,
+                            onDismissRequest = { showAccountMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Logout") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Logout,
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = {
+                                    showAccountMenu = false
+                                    showLogoutDialog = true
+                                }
+                            )
                         }
                     }
                 }
             )
         }
-
-        inviteResultText?.let { result ->
-            Text(
-                text = result,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = Dimens.SpaceSm)
-            )
-        }
-
-        Row(
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = Dimens.PagerIndicatorTopPadding,
-                    bottom = Dimens.SpaceMd
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .fillMaxSize()
+                .background(Color(0xFFF3F4F6))
+                .padding(innerPadding)
+                .padding(Dimens.SpaceLg)
         ) {
-            val canGoPrevious = pagerState.currentPage > 0
-            val canGoNext = pagerState.currentPage < pages.lastIndex
+            Text(
+                text = stringResource(R.string.guardian_home_title),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
-            IconButton(
-                onClick = {
-                    if (canGoPrevious) {
+            if (isLoading) {
+                Text(
+                    text = stringResource(R.string.loading_members),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = Dimens.SpaceSm)
+                )
+            }
+
+            loadError?.let { error ->
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = Dimens.SpaceSm)
+                )
+            }
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = Dimens.SpaceMd)
+            ) { pageIndex ->
+                GuardianPageContent(
+                    items = pages[pageIndex],
+                    onMemberClick = onMemberClick,
+                    onInviteClick = {
                         coroutineScope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            try {
+                                val response = inviteRepository.createInvite(guardianUserId)
+
+                                if (response.success && !response.invite_link.isNullOrBlank()) {
+                                    inviteResultText = response.invite_link
+                                    inviteDialogText = response.invite_link
+                                    inviteDialogIsError = false
+                                } else {
+                                    inviteResultText = response.error ?: context.getString(R.string.invite_failed)
+                                    inviteDialogText = response.error ?: context.getString(R.string.invite_failed)
+                                    inviteDialogIsError = true
+                                }
+                            } catch (e: HttpException) {
+                                val errorBody = e.response()?.errorBody()?.string()
+                                val message = context.getString(
+                                    R.string.http_error,
+                                    e.code(),
+                                    errorBody ?: e.message()
+                                )
+                                inviteResultText = message
+                                inviteDialogText = message
+                                inviteDialogIsError = true
+                            } catch (e: Exception) {
+                                inviteResultText = e.message ?: context.getString(R.string.unknown_error)
+                                inviteDialogText = e.message ?: context.getString(R.string.unknown_error)
+                                inviteDialogIsError = true
+                            }
                         }
                     }
-                },
-                enabled = canGoPrevious,
-                modifier = Modifier
-                    .size(Dimens.PagerArrowButtonSize)
-                    .alpha(if (canGoPrevious) 1f else 0.3f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ChevronLeft,
-                    contentDescription = stringResource(R.string.previous_page)
                 )
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(Dimens.PagerIndicatorSpacing),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        top = Dimens.PagerIndicatorTopPadding,
+                        bottom = Dimens.SpaceMd
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                repeat(pages.size) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(Dimens.PagerIndicatorSize)
-                            .background(
-                                color = if (index == pagerState.currentPage) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-                                },
-                                shape = CircleShape
-                            )
+                val canGoPrevious = pagerState.currentPage > 0
+                val canGoNext = pagerState.currentPage < pages.lastIndex
+
+                IconButton(
+                    onClick = {
+                        if (canGoPrevious) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            }
+                        }
+                    },
+                    enabled = canGoPrevious,
+                    modifier = Modifier
+                        .size(Dimens.PagerArrowButtonSize)
+                        .alpha(if (canGoPrevious) 1f else 0.3f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ChevronLeft,
+                        contentDescription = stringResource(R.string.previous_page)
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.PagerIndicatorSpacing),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(pages.size) { index ->
+                        Box(
+                            modifier = Modifier
+                                .size(Dimens.PagerIndicatorSize)
+                                .background(
+                                    color = if (index == pagerState.currentPage) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                                    },
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        if (canGoNext) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    },
+                    enabled = canGoNext,
+                    modifier = Modifier
+                        .size(Dimens.PagerArrowButtonSize)
+                        .alpha(if (canGoNext) 1f else 0.3f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = stringResource(R.string.next_page)
                     )
                 }
             }
-
-            IconButton(
-                onClick = {
-                    if (canGoNext) {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    }
-                },
-                enabled = canGoNext,
-                modifier = Modifier
-                    .size(Dimens.PagerArrowButtonSize)
-                    .alpha(if (canGoNext) 1f else 0.3f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = stringResource(R.string.next_page)
-                )
-            }
         }
+    }
 
-        inviteDialogText?.let { dialogText ->
-            AlertDialog(
-                onDismissRequest = { inviteDialogText = null },
-                title = {
-                    Text(if (inviteDialogIsError) stringResource(R.string.invite_error_title) else stringResource(R.string.invite_link_title))
-                },
-                text = {
-                    if (inviteDialogIsError) {
-                        Text(dialogText)
-                    } else {
-                        Column {
-                            Text(stringResource(R.string.invite_link_ready))
-                            Spacer(modifier = Modifier.height(Dimens.SpaceSm))
-                            Text(stringResource(R.string.invite_link_instruction))
-                        }
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Sign out?") },
+            text = {
+                Text("You’ll need to sign in again to access your OKSignal account.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
                     }
-                },
-                confirmButton = {
+                ) {
+                    Text("Sign out")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLogoutDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    inviteDialogText?.let { dialogText ->
+        AlertDialog(
+            onDismissRequest = { inviteDialogText = null },
+            title = {
+                Text(
                     if (inviteDialogIsError) {
+                        stringResource(R.string.invite_error_title)
+                    } else {
+                        stringResource(R.string.invite_link_title)
+                    }
+                )
+            },
+            text = {
+                if (inviteDialogIsError) {
+                    Text(dialogText)
+                } else {
+                    Column {
+                        Text(stringResource(R.string.invite_link_ready))
+                        Spacer(modifier = Modifier.height(Dimens.SpaceSm))
+                        Text(stringResource(R.string.invite_link_instruction))
+                    }
+                }
+            },
+            confirmButton = {
+                if (inviteDialogIsError) {
+                    TextButton(onClick = { inviteDialogText = null }) {
+                        Text(stringResource(R.string.ok))
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)) {
+                        TextButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(dialogText))
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.invite_link_copied),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        ) {
+                            Text(stringResource(R.string.copy))
+                        }
+
+                        TextButton(
+                            onClick = { shareInviteLink(dialogText) }
+                        ) {
+                            Text(stringResource(R.string.share))
+                        }
+
                         TextButton(
                             onClick = { inviteDialogText = null }
                         ) {
-                            Text(stringResource(R.string.ok))
-                        }
-                    } else {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    clipboardManager.setText(AnnotatedString(dialogText))
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.invite_link_copied),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            ) {
-                                Text(stringResource(R.string.copy))
-                            }
-
-                            TextButton(
-                                onClick = {
-                                    shareInviteLink(dialogText)
-                                }
-                            ) {
-                                Text(stringResource(R.string.share))
-                            }
-
-                            TextButton(
-                                onClick = { inviteDialogText = null }
-                            ) {
-                                Text(stringResource(R.string.close))
-                            }
+                            Text(stringResource(R.string.close))
                         }
                     }
                 }
-            )
-        }
+            }
+        )
     }
 }
 

@@ -1,21 +1,21 @@
-package com.bbksapps.oksignal.ui.start
+package com.bbksapps.oksignal.ui.invite
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
-import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
+import com.bbksapps.oksignal.data.repository.InviteRepository
 
-class AppStartViewModelFactory(
+class InviteAcceptViewModelFactory(
     private val appSessionRepository: AppSessionRepository,
-    private val deviceStoreRepository: DeviceStoreRepository
+    private val inviteRepository: InviteRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AppStartViewModel::class.java)) {
-            return AppStartViewModel(
+        if (modelClass.isAssignableFrom(InviteAcceptViewModel::class.java)) {
+            return InviteAcceptViewModel(
                 appSessionRepository = appSessionRepository,
-                deviceStoreRepository = deviceStoreRepository
+                inviteRepository = inviteRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")

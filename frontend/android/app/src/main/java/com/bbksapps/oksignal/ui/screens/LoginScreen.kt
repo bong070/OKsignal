@@ -1,5 +1,6 @@
 package com.bbksapps.oksignal.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.bbksapps.oksignal.R
 import com.bbksapps.oksignal.ui.theme.Dimens
+import android.app.Activity
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun LoginScreen(
@@ -47,10 +51,17 @@ fun LoginScreen(
 
     val errorEnterEmail = stringResource(R.string.error_enter_email)
     val errorEnterPassword = stringResource(R.string.error_enter_password)
+    val context = LocalContext.current
+
+    BackHandler {
+        (context as? Activity)?.finish()
+    }
+
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(
                 horizontal = Dimens.ScreenHorizontalPadding,
                 vertical = Dimens.ScreenVerticalPadding

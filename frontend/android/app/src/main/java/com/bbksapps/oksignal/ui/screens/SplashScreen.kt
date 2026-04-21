@@ -13,14 +13,16 @@ import com.bbksapps.oksignal.ui.start.StartDestination
 
 @Composable
 fun SplashScreen(
-    startDestination: StartDestination?,
+    startDestination: StartDestination,
     onNavigateToLogin: () -> Unit,
     onNavigateToGuardian: () -> Unit,
     onNavigateToMember: () -> Unit,
     initialInviteToken: String?,
     onNavigateToInviteAccept: (String) -> Unit,
 ) {
-    LaunchedEffect(Unit) {
+    LaunchedEffect(startDestination, initialInviteToken) {
+        if (startDestination == StartDestination.Loading) return@LaunchedEffect
+
         delay(1000)
 
         if (!initialInviteToken.isNullOrBlank()) {
@@ -32,7 +34,7 @@ fun SplashScreen(
             StartDestination.GuardianHome -> onNavigateToGuardian()
             StartDestination.MemberHome -> onNavigateToMember()
             StartDestination.Login -> onNavigateToLogin()
-            null -> Unit
+            StartDestination.Loading -> Unit
         }
     }
 
