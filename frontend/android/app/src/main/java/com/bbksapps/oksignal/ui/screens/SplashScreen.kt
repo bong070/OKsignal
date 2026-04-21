@@ -9,23 +9,30 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
+import com.bbksapps.oksignal.ui.start.StartDestination
 
 @Composable
 fun SplashScreen(
+    startDestination: StartDestination?,
     onNavigateToLogin: () -> Unit,
     onNavigateToGuardian: () -> Unit,
-    onNavigateToMember: () -> Unit
+    onNavigateToMember: () -> Unit,
+    initialInviteToken: String?,
+    onNavigateToInviteAccept: (String) -> Unit,
 ) {
     LaunchedEffect(Unit) {
         delay(1000)
 
-        // TODO: 나중에 여기 device_id + 서버 체크 들어감
-        val mockState = "guardian" // "guardian", "member", "unknown"
+        if (!initialInviteToken.isNullOrBlank()) {
+            onNavigateToInviteAccept(initialInviteToken)
+            return@LaunchedEffect
+        }
 
-        when (mockState) {
-            "guardian" -> onNavigateToGuardian()
-            "member" -> onNavigateToMember()
-            else -> onNavigateToLogin()
+        when (startDestination) {
+            StartDestination.GuardianHome -> onNavigateToGuardian()
+            StartDestination.MemberHome -> onNavigateToMember()
+            StartDestination.Login -> onNavigateToLogin()
+            null -> Unit
         }
     }
 

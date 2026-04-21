@@ -199,7 +199,10 @@ async function handleCreateInvite(request, env) {
 
   const inviterUserId = guardian_user_id ?? inviter_user_id;
   if (!inviterUserId) {
-    return json({ success: false, error: "guardian_user_id or inviter_user_id is required" }, 400);
+    return json(
+      { success: false, error: "guardian_user_id or inviter_user_id is required" },
+      400
+    );
   }
 
   const guardian = await requireGuardian(env, inviterUserId);
@@ -208,32 +211,49 @@ async function handleCreateInvite(request, env) {
   }
 
   const activeLinkCount = await getActiveLinkCount(env, inviterUserId);
-  const activeInviteCount = await getActiveInviteCount(env, inviterUserId);
 
-  if (guardian.user.plan_type === "free") {
-    if (activeLinkCount >= 1) {
-      return json(
-        {
-          success: false,
-          error: "Free plan supports only 1 linked member. Upgrade to premium to add another member.",
-        },
-        403
-      );
-    }
-
-    if (activeInviteCount >= 1) {
-      return json(
-        {
-          success: false,
-          error: "Free plan can only have one active invite link at a time.",
-        },
-        403
-      );
-    }
+  if (guardian.user.plan_type === "free" && activeLinkCount >= 1) {
+    return json(
+      {
+        success: false,
+        error: "Free plan supports only 1 linked member. Upgrade to premium to add another member.",
+      },
+      403
+    );
   }
 
   const now = isoNow();
-  const hours = Number.isInteger(expires_in_hours) && expires_in_hours > 0 ? expires_in_hours : 168;
+
+  const existingInvite = await env.DB
+    .prepare(`
+      SELECT id, token, expires_at, created_at, updated_at
+      FROM direct_invites
+      WHERE inviter_user_id = ?
+        AND status = 'active'
+        AND expires_at > ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `)
+    .bind(inviterUserId, now)
+    .first();
+
+  if (existingInvite) {
+    return json({
+      success: true,
+      reused: true,
+      invite_token_id: existingInvite.id,
+      invite_token: existingInvite.token,
+      invite_link: `oksignal://invite?token=${encodeURIComponent(existingInvite.token)}`,
+      expires_at: existingInvite.expires_at,
+      created_at: existingInvite.created_at,
+    });
+  }
+
+  const hours =
+    Number.isInteger(expires_in_hours) && expires_in_hours > 0
+      ? expires_in_hours
+      : 168;
+
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
   const tokenId = crypto.randomUUID();
   const token = generateInviteToken();
@@ -250,10 +270,12 @@ async function handleCreateInvite(request, env) {
 
   return json({
     success: true,
+    reused: false,
     invite_token_id: tokenId,
     invite_token: token,
     invite_link: `oksignal://invite?token=${encodeURIComponent(token)}`,
     expires_at: expiresAt,
+    created_at: now,
   });
 }
 

@@ -38,4 +38,29 @@
 
     <string name="previous_page">Previous page</string>
     <string name="next_page">Next page</string>
+
+    <string name="invite_link_title">Invite Link</string>
+    <string name="invite_error_title">Invite Error</string>
+
+    <string name="invite_link_ready">The invite link is ready.</string>
+    <string name="invite_link_instruction">Copy or share it with your family member.</string>
+
+    <string name="copy">Copy</string>
+    <string name="share">Share</string>
+    <string name="close">Close</string>
+    <string name="ok">OK</string>
+
+    <string name="invite_link_copied">Invite link copied</string>
+
+    <string name="unknown_member">Unknown</string>
+    <string name="no_activity">No activity yet</string>
+
+    <string name="loading_members">Loading members...</string>
+    <string name="load_members_error">Failed to load members</string>
+
+    <string name="share_invite_link">Share invite link</string>
+    <string name="unknown_error">Unknown error</string>
+
+    <string name="invite_failed">Invite failed</string>
+    <string name="http_error">HTTP %1$d: %2$s</string>
 </resources>

@@ -31,6 +31,23 @@ import com.bbksapps.oksignal.ui.theme.Dimens
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.alpha
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.bbksapps.oksignal.data.repository.InviteRepository
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import retrofit2.HttpException
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import android.content.Intent
+import androidx.compose.runtime.LaunchedEffect
+import com.bbksapps.oksignal.data.repository.GuardianRepository
 
 data class GuardianMemberUiModel(
     val displayName: String,
@@ -41,10 +58,9 @@ data class GuardianMemberUiModel(
 
 @Composable
 fun GuardianHomeScreen(
-    onMemberClick: (GuardianMemberUiModel) -> Unit = {},
-    onInviteClick: () -> Unit = {}
+    onMemberClick: (GuardianMemberUiModel) -> Unit = {}
 ) {
-    val mockMembers = listOf(
+    /*val mockMembers = listOf(
         GuardianMemberUiModel(
             displayName = "엄마",
             lastActive = "Apr 13, 2026 13:25",
@@ -82,8 +98,76 @@ fun GuardianHomeScreen(
         .map { chunk -> chunk + List(4 - chunk.size) { null } }
         .ifEmpty { listOf(List(4) { null }) }
 
-    val pagerState = rememberPagerState(pageCount = { pages.size })
+     */
+
     val coroutineScope = rememberCoroutineScope()
+
+    val inviteRepository = remember { InviteRepository() }
+
+    val guardianRepository = remember { GuardianRepository() }
+
+    var members by remember { mutableStateOf<List<GuardianMemberUiModel>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var inviteDialogIsError by remember { mutableStateOf(false) }
+
+    var inviteResultText by remember { mutableStateOf<String?>(null) }
+    var inviteDialogText by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
+    val pages: List<List<GuardianMemberUiModel?>> = members
+        .chunked(4)
+        .map { chunk -> chunk + List(4 - chunk.size) { null } }
+        .ifEmpty { listOf(List(4) { null }) }
+
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+
+    fun shareInviteLink(link: String) {
+        val sendIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, link)
+            type = "text/plain"
+        }
+
+        val shareIntent = Intent.createChooser(sendIntent, context.getString(R.string.share_invite_link))
+        context.startActivity(shareIntent)
+    }
+
+    val guardianUserId = "261b035a-0530-4b58-822b-49781e99b278"
+
+    LaunchedEffect(guardianUserId) {
+        try {
+            isLoading = true
+            loadError = null
+
+            val response = guardianRepository.getGuardianMembers(guardianUserId)
+            response.members.forEach {
+                println("DEBUG member = $it")
+            }
+            if (response.success) {
+                members = response.members.map { dto ->
+                    GuardianMemberUiModel(
+                        displayName = dto.member_display_name ?: context.getString(R.string.unknown_member),
+                        lastActive = dto.last_activity_at ?: context.getString(R.string.no_activity),
+                        lastLocation = if (dto.last_known_lat != null && dto.last_known_lng != null) {
+                            "${dto.last_known_lng}, ${dto.last_known_lat}"
+                        } else {
+                            null
+                        },
+                        isActive = dto.last_activity_at != null
+                    )
+                }
+            } else {
+                loadError = response.error ?: context.getString(R.string.load_members_error)
+            }
+        } catch (e: Exception) {
+            loadError = e.message ?: context.getString(R.string.unknown_error)
+        } finally {
+            isLoading = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -97,6 +181,23 @@ fun GuardianHomeScreen(
             color = MaterialTheme.colorScheme.onBackground
         )
 
+        if (isLoading) {
+            Text(
+                text = stringResource(R.string.loading_members),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = Dimens.SpaceSm)
+            )
+        }
+
+        loadError?.let { error ->
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = Dimens.SpaceSm)
+            )
+        }
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -106,7 +207,46 @@ fun GuardianHomeScreen(
             GuardianPageContent(
                 items = pages[pageIndex],
                 onMemberClick = onMemberClick,
-                onInviteClick = onInviteClick
+                onInviteClick = {
+                    coroutineScope.launch {
+                        try {
+                            val response = inviteRepository.createInvite(guardianUserId)
+
+                            if (response.success && !response.invite_link.isNullOrBlank()) {
+                                inviteResultText = response.invite_link
+                                inviteDialogText = response.invite_link
+                                inviteDialogIsError = false
+                            } else {
+                                inviteResultText = response.error ?: context.getString(R.string.invite_failed)
+                                inviteDialogText = response.error ?: context.getString(R.string.invite_failed)
+                                inviteDialogIsError = true
+                            }
+                        } catch (e: HttpException) {
+                            val errorBody = e.response()?.errorBody()?.string()
+                            val message = context.getString(
+                                R.string.http_error,
+                                e.code(),
+                                errorBody ?: e.message()
+                            )
+                            inviteResultText = message
+                            inviteDialogText = message
+                            inviteDialogIsError = true
+                        } catch (e: Exception) {
+                            inviteResultText = e.message ?: context.getString(R.string.unknown_error)
+                            inviteDialogText = e.message ?: context.getString(R.string.unknown_error)
+                            inviteDialogIsError = true
+                        }
+                    }
+                }
+            )
+        }
+
+        inviteResultText?.let { result ->
+            Text(
+                text = result,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = Dimens.SpaceSm)
             )
         }
 
@@ -180,6 +320,66 @@ fun GuardianHomeScreen(
                     contentDescription = stringResource(R.string.next_page)
                 )
             }
+        }
+
+        inviteDialogText?.let { dialogText ->
+            AlertDialog(
+                onDismissRequest = { inviteDialogText = null },
+                title = {
+                    Text(if (inviteDialogIsError) stringResource(R.string.invite_error_title) else stringResource(R.string.invite_link_title))
+                },
+                text = {
+                    if (inviteDialogIsError) {
+                        Text(dialogText)
+                    } else {
+                        Column {
+                            Text(stringResource(R.string.invite_link_ready))
+                            Spacer(modifier = Modifier.height(Dimens.SpaceSm))
+                            Text(stringResource(R.string.invite_link_instruction))
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (inviteDialogIsError) {
+                        TextButton(
+                            onClick = { inviteDialogText = null }
+                        ) {
+                            Text(stringResource(R.string.ok))
+                        }
+                    } else {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm)
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(dialogText))
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.invite_link_copied),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            ) {
+                                Text(stringResource(R.string.copy))
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    shareInviteLink(dialogText)
+                                }
+                            ) {
+                                Text(stringResource(R.string.share))
+                            }
+
+                            TextButton(
+                                onClick = { inviteDialogText = null }
+                            ) {
+                                Text(stringResource(R.string.close))
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 }
