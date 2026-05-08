@@ -54,3 +54,64 @@ data class GuardianMemberDto(
     val last_known_lng: Double? = null,
     val last_known_location_at: String? = null
 )
+
+data class RegisterRequest(
+    val device_id: String,
+    val fcm_token: String? = null,
+    val display_name: String? = null,
+    val email: String? = null,
+    val phone_number: String? = null,
+    val device_name: String? = null
+)
+
+data class RegisterResponse(
+    val success: Boolean,
+    val token: String? = null,
+    val user: RegisterUserDto? = null,
+    val is_new_user: Boolean? = null,
+    val error: String? = null
+)
+
+data class RegisterUserDto(
+    val id: String,
+    val display_name: String? = null,
+    val email: String? = null,
+    val phone_number: String? = null,
+    val status: String? = null,
+    val plan_type: String? = null,
+    val subscription_status: String? = null
+)
+
+data class AuthLoginRequest(
+    val email: String,
+    val password: String,
+    val device_id: String,
+    val fcm_token: String? = null,
+    val device_name: String? = null
+)
+
+data class AuthSignupRequest(
+    val email: String,
+    val password: String,
+    val display_name: String,
+    val device_id: String,
+    val fcm_token: String? = null,
+    val device_name: String? = null
+)
+
+data class AuthResponse(
+    val success: Boolean,
+    val token: String? = null,
+    val user: AuthUserDto? = null,
+    val error: String? = null
+)
+
+data class AuthUserDto(
+    val id: String,
+    val display_name: String? = null,
+    val email: String? = null,
+    val phone_number: String? = null,
+    val status: String? = null,
+    val plan_type: String? = null,
+    val subscription_status: String? = null
+)

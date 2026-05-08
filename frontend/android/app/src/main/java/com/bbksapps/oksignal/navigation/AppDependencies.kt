@@ -9,13 +9,15 @@ import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
 import com.bbksapps.oksignal.data.local.repository.RelationshipStoreRepository
 import com.bbksapps.oksignal.data.local.repository.SessionStoreRepository
 import com.bbksapps.oksignal.data.local.repository.UserStoreRepository
+import com.bbksapps.oksignal.data.repository.AuthRepository
 
 data class AppDependencies(
     val deviceStoreRepository: DeviceStoreRepository,
     val userStoreRepository: UserStoreRepository,
     val sessionStoreRepository: SessionStoreRepository,
     val relationshipStoreRepository: RelationshipStoreRepository,
-    val appSessionRepository: AppSessionRepository
+    val appSessionRepository: AppSessionRepository,
+    val authRepository: AuthRepository
 )
 
 @Composable
@@ -34,6 +36,10 @@ fun rememberAppDependencies(): AppDependencies {
     }
     val relationshipStoreRepository = remember(appContext) {
         RelationshipStoreRepository(appContext)
+    }
+
+    val authRepository = remember {
+        AuthRepository()
     }
 
     val appSessionRepository = remember(
@@ -62,7 +68,8 @@ fun rememberAppDependencies(): AppDependencies {
             userStoreRepository = userStoreRepository,
             sessionStoreRepository = sessionStoreRepository,
             relationshipStoreRepository = relationshipStoreRepository,
-            appSessionRepository = appSessionRepository
+            appSessionRepository = appSessionRepository,
+            authRepository = authRepository
         )
     }
 }

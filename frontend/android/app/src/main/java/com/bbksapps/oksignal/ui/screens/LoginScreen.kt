@@ -42,7 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 fun LoginScreen(
     onLoginClick: (String, String) -> Unit,
     onGoogleLoginClick: () -> Unit,
-    onNavigateToSignUp: () -> Unit
+    onNavigateToSignUp: () -> Unit,
+    serverErrorMessage: String? = null
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -146,7 +147,9 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(Dimens.SpaceMd))
 
-        errorMessage?.let {
+        val visibleErrorMessage = errorMessage ?: serverErrorMessage
+
+        visibleErrorMessage?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,

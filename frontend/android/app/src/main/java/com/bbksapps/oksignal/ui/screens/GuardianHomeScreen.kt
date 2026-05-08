@@ -1,60 +1,57 @@
 package com.bbksapps.oksignal.ui.screens
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import com.bbksapps.oksignal.R
-import com.bbksapps.oksignal.ui.components.EmptyMemberCard
-import com.bbksapps.oksignal.ui.components.GuardianMemberCard
-import com.bbksapps.oksignal.ui.theme.Dimens
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.alpha
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.bbksapps.oksignal.data.repository.InviteRepository
-import android.widget.Toast
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
-import retrofit2.HttpException
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import android.content.Intent
-import androidx.compose.runtime.LaunchedEffect
-import com.bbksapps.oksignal.data.repository.GuardianRepository
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
+import com.bbksapps.oksignal.R
+import com.bbksapps.oksignal.ui.components.EmptyMemberCard
+import com.bbksapps.oksignal.ui.components.GuardianMemberCard
+import com.bbksapps.oksignal.ui.guardian.GuardianHomeUiState
+import com.bbksapps.oksignal.ui.theme.Dimens
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 data class GuardianMemberUiModel(
     val displayName: String,
@@ -66,69 +63,20 @@ data class GuardianMemberUiModel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuardianHomeScreen(
-    guardianUserId: String,
+    uiState: GuardianHomeUiState,
+    onInviteClick: () -> Unit,
+    onDismissInviteDialog: () -> Unit,
     onMemberClick: (GuardianMemberUiModel) -> Unit = {},
     onLogout: () -> Unit
 ) {
-    /*val mockMembers = listOf(
-        GuardianMemberUiModel(
-            displayName = "엄마",
-            lastActive = "Apr 13, 2026 13:25",
-            lastLocation = null,
-            isActive = true
-        ),
-        GuardianMemberUiModel(
-            displayName = "할아버지",
-            lastActive = "Apr 13, 2026 10:14",
-            lastLocation = "103.29, 37.5665",
-            isActive = false
-        ),
-        GuardianMemberUiModel(
-            displayName = "할머니",
-            lastActive = "Apr 13, 2026 12:01",
-            lastLocation = null,
-            isActive = true
-        ),
-        GuardianMemberUiModel(
-            displayName = "아빠",
-            lastActive = "Apr 13, 2026 08:42",
-            lastLocation = "127.02, 37.49",
-            isActive = false
-        ),
-        GuardianMemberUiModel(
-            displayName = "삼촌",
-            lastActive = "Apr 13, 2026 14:10",
-            lastLocation = null,
-            isActive = true
-        )
-    )
-
-    val pages: List<List<GuardianMemberUiModel?>> = mockMembers
-        .chunked(4)
-        .map { chunk -> chunk + List(4 - chunk.size) { null } }
-        .ifEmpty { listOf(List(4) { null }) }
-
-     */
-
+    val coroutineScope = rememberCoroutineScope()
     var showAccountMenu by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
-
-    val coroutineScope = rememberCoroutineScope()
-    val inviteRepository = remember { InviteRepository() }
-    val guardianRepository = remember { GuardianRepository() }
-
-    var members by remember { mutableStateOf<List<GuardianMemberUiModel>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var loadError by remember { mutableStateOf<String?>(null) }
-    var inviteDialogIsError by remember { mutableStateOf(false) }
-
-    var inviteResultText by remember { mutableStateOf<String?>(null) }
-    var inviteDialogText by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
-    val pages: List<List<GuardianMemberUiModel?>> = members
+    val pages: List<List<GuardianMemberUiModel?>> = uiState.members
         .chunked(4)
         .map { chunk -> chunk + List(4 - chunk.size) { null } }
         .ifEmpty { listOf(List(4) { null }) }
@@ -143,33 +91,6 @@ fun GuardianHomeScreen(
         }
         val shareIntent = Intent.createChooser(sendIntent, context.getString(R.string.share_invite_link))
         context.startActivity(shareIntent)
-    }
-
-    LaunchedEffect(guardianUserId) {
-        try {
-            isLoading = true
-            loadError = null
-
-            val response = guardianRepository.getGuardianMembers(guardianUserId)
-            if (response.success) {
-                members = response.members.map { dto ->
-                    GuardianMemberUiModel(
-                        displayName = dto.member_display_name ?: context.getString(R.string.unknown_member),
-                        lastActive = dto.last_activity_at ?: context.getString(R.string.no_activity),
-                        lastLocation = if (dto.last_known_lat != null && dto.last_known_lng != null) {
-                            "${dto.last_known_lng}, ${dto.last_known_lat}"
-                        } else null,
-                        isActive = dto.last_activity_at != null
-                    )
-                }
-            } else {
-                loadError = response.error ?: context.getString(R.string.load_members_error)
-            }
-        } catch (e: Exception) {
-            loadError = e.message ?: context.getString(R.string.unknown_error)
-        } finally {
-            isLoading = false
-        }
     }
 
     Scaffold(
@@ -221,7 +142,7 @@ fun GuardianHomeScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            if (isLoading) {
+            if (uiState.isLoading) {
                 Text(
                     text = stringResource(R.string.loading_members),
                     style = MaterialTheme.typography.bodyMedium,
@@ -229,7 +150,7 @@ fun GuardianHomeScreen(
                 )
             }
 
-            loadError?.let { error ->
+            uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
                     style = MaterialTheme.typography.bodyMedium,
@@ -247,37 +168,7 @@ fun GuardianHomeScreen(
                 GuardianPageContent(
                     items = pages[pageIndex],
                     onMemberClick = onMemberClick,
-                    onInviteClick = {
-                        coroutineScope.launch {
-                            try {
-                                val response = inviteRepository.createInvite(guardianUserId)
-
-                                if (response.success && !response.invite_link.isNullOrBlank()) {
-                                    inviteResultText = response.invite_link
-                                    inviteDialogText = response.invite_link
-                                    inviteDialogIsError = false
-                                } else {
-                                    inviteResultText = response.error ?: context.getString(R.string.invite_failed)
-                                    inviteDialogText = response.error ?: context.getString(R.string.invite_failed)
-                                    inviteDialogIsError = true
-                                }
-                            } catch (e: HttpException) {
-                                val errorBody = e.response()?.errorBody()?.string()
-                                val message = context.getString(
-                                    R.string.http_error,
-                                    e.code(),
-                                    errorBody ?: e.message()
-                                )
-                                inviteResultText = message
-                                inviteDialogText = message
-                                inviteDialogIsError = true
-                            } catch (e: Exception) {
-                                inviteResultText = e.message ?: context.getString(R.string.unknown_error)
-                                inviteDialogText = e.message ?: context.getString(R.string.unknown_error)
-                                inviteDialogIsError = true
-                            }
-                        }
-                    }
+                    onInviteClick = onInviteClick
                 )
             }
 
@@ -382,12 +273,12 @@ fun GuardianHomeScreen(
         )
     }
 
-    inviteDialogText?.let { dialogText ->
+    uiState.inviteDialogText?.let { dialogText ->
         AlertDialog(
-            onDismissRequest = { inviteDialogText = null },
+            onDismissRequest = onDismissInviteDialog,
             title = {
                 Text(
-                    if (inviteDialogIsError) {
+                    if (uiState.inviteDialogIsError) {
                         stringResource(R.string.invite_error_title)
                     } else {
                         stringResource(R.string.invite_link_title)
@@ -395,7 +286,7 @@ fun GuardianHomeScreen(
                 )
             },
             text = {
-                if (inviteDialogIsError) {
+                if (uiState.inviteDialogIsError) {
                     Text(dialogText)
                 } else {
                     Column {
@@ -406,8 +297,8 @@ fun GuardianHomeScreen(
                 }
             },
             confirmButton = {
-                if (inviteDialogIsError) {
-                    TextButton(onClick = { inviteDialogText = null }) {
+                if (uiState.inviteDialogIsError) {
+                    TextButton(onClick = onDismissInviteDialog) {
                         Text(stringResource(R.string.ok))
                     }
                 } else {
@@ -432,7 +323,7 @@ fun GuardianHomeScreen(
                         }
 
                         TextButton(
-                            onClick = { inviteDialogText = null }
+                            onClick = onDismissInviteDialog
                         ) {
                             Text(stringResource(R.string.close))
                         }

@@ -38,7 +38,8 @@ import com.bbksapps.oksignal.ui.theme.Dimens
 fun SignUpScreen(
     onSignUpClick: (String, String, String) -> Unit,
     onGoogleSignUpClick: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    serverErrorMessage: String? = null
 ) {
     var email by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
@@ -178,7 +179,9 @@ fun SignUpScreen(
 
         Spacer(modifier = Modifier.height(Dimens.SpaceMd))
 
-        errorMessage?.let {
+        val visibleErrorMessage = errorMessage ?: serverErrorMessage
+
+        visibleErrorMessage?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,

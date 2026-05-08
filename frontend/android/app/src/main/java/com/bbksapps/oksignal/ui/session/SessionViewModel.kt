@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.model.AppMode
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
+import com.bbksapps.oksignal.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 data class LoginUiState(
     val isLoading: Boolean = false,
@@ -17,7 +19,8 @@ data class LoginUiState(
 )
 
 class SessionViewModel(
-    private val appSessionRepository: AppSessionRepository
+    private val appSessionRepository: AppSessionRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _loginUiState = MutableStateFlow(LoginUiState())
@@ -35,37 +38,118 @@ class SessionViewModel(
             _loginUiState.value = LoginUiState(isLoading = true)
 
             try {
-                // TODO: replace with real backend login API
-                val mockCanActAsGuardian = true
-                val mockCanActAsMember = true
+                val appSession = appSessionRepository.appSessionState.first()
+                val deviceId = appSession.device.deviceId
 
-                appSessionRepository.onLoginSuccess(
-                    userId = "mock-user-123",
-                    email = email,
-                    displayName = "Brandon",
-                    planType = "free",
-                    accessToken = "mock-access-token",
-                    refreshToken = null,
-                    tokenExpiresAt = null,
-                    canActAsGuardian = mockCanActAsGuardian,
-                    canActAsMember = mockCanActAsMember
+                if (deviceId.isNullOrBlank()) {
+                    _loginUiState.value = LoginUiState(
+                        isLoading = false,
+                        errorMessage = "Device ID is not ready yet."
+                    )
+                    return@launch
+                }
+
+                val response = authRepository.login(
+                    email = email.trim(),
+                    password = password,
+                    deviceId = deviceId,
+                    deviceName = android.os.Build.MODEL ?: "Android Device"
                 )
 
-                val mode = when {
-                    mockCanActAsGuardian -> AppMode.GUARDIAN
-                    mockCanActAsMember -> AppMode.MEMBER
-                    else -> AppMode.MEMBER
+                if (!response.success || response.user == null || response.token.isNullOrBlank()) {
+                    _loginUiState.value = LoginUiState(
+                        isLoading = false,
+                        errorMessage = response.error ?: "Login failed."
+                    )
+                    return@launch
                 }
+
+                appSessionRepository.onLoginSuccess(
+                    userId = response.user.id,
+                    email = response.user.email ?: email.trim(),
+                    displayName = response.user.display_name ?: "OKSignal User",
+                    planType = response.user.plan_type ?: "free",
+                    accessToken = response.token,
+                    refreshToken = null,
+                    tokenExpiresAt = null,
+                    canActAsGuardian = true,
+                    canActAsMember = true
+                )
 
                 _loginUiState.value = LoginUiState(
                     isLoading = false,
                     isSuccess = true,
-                    selectedMode = mode
+                    selectedMode = AppMode.GUARDIAN
                 )
             } catch (e: Exception) {
                 _loginUiState.value = LoginUiState(
                     isLoading = false,
                     errorMessage = e.message ?: "Login failed."
+                )
+            }
+        }
+    }
+
+    fun signup(email: String, displayName: String, password: String) {
+        if (email.isBlank() || displayName.isBlank() || password.isBlank()) {
+            _loginUiState.value = LoginUiState(
+                errorMessage = "Email, display name, and password are required."
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _loginUiState.value = LoginUiState(isLoading = true)
+
+            try {
+                val appSession = appSessionRepository.appSessionState.first()
+                val deviceId = appSession.device.deviceId
+
+                if (deviceId.isNullOrBlank()) {
+                    _loginUiState.value = LoginUiState(
+                        isLoading = false,
+                        errorMessage = "Device ID is not ready yet."
+                    )
+                    return@launch
+                }
+
+                val response = authRepository.signup(
+                    email = email.trim(),
+                    password = password,
+                    displayName = displayName.trim(),
+                    deviceId = deviceId,
+                    deviceName = android.os.Build.MODEL ?: "Android Device"
+                )
+
+                if (!response.success || response.user == null || response.token.isNullOrBlank()) {
+                    _loginUiState.value = LoginUiState(
+                        isLoading = false,
+                        errorMessage = response.error ?: "Signup failed."
+                    )
+                    return@launch
+                }
+
+                appSessionRepository.onLoginSuccess(
+                    userId = response.user.id,
+                    email = response.user.email ?: email.trim(),
+                    displayName = response.user.display_name ?: displayName.trim(),
+                    planType = response.user.plan_type ?: "free",
+                    accessToken = response.token,
+                    refreshToken = null,
+                    tokenExpiresAt = null,
+                    canActAsGuardian = true,
+                    canActAsMember = true
+                )
+
+                _loginUiState.value = LoginUiState(
+                    isLoading = false,
+                    isSuccess = true,
+                    selectedMode = AppMode.GUARDIAN
+                )
+            } catch (e: Exception) {
+                _loginUiState.value = LoginUiState(
+                    isLoading = false,
+                    errorMessage = e.message ?: "Signup failed."
                 )
             }
         }

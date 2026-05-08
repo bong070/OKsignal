@@ -25,7 +25,8 @@ import com.bbksapps.oksignal.ui.session.SessionViewModel
 import com.bbksapps.oksignal.ui.session.SessionViewModelFactory
 import com.bbksapps.oksignal.ui.start.AppStartViewModel
 import com.bbksapps.oksignal.ui.start.AppStartViewModelFactory
-import com.bbksapps.oksignal.data.local.model.AppSessionState
+import com.bbksapps.oksignal.ui.guardian.GuardianHomeViewModel
+import com.bbksapps.oksignal.ui.guardian.GuardianHomeViewModelFactory
 
 @Composable
 fun AppNavGraph(
@@ -43,15 +44,13 @@ fun AppNavGraph(
 
     val sessionViewModel: SessionViewModel = viewModel(
         factory = SessionViewModelFactory(
-            dependencies.appSessionRepository
+            appSessionRepository = dependencies.appSessionRepository,
+            authRepository = dependencies.authRepository
         )
     )
 
     val startDestination by appStartViewModel.startDestination.collectAsStateWithLifecycle()
     val loginUiState by sessionViewModel.loginUiState.collectAsStateWithLifecycle()
-    val appSession by dependencies.appSessionRepository.appSessionState.collectAsStateWithLifecycle(
-        initialValue = AppSessionState()
-    )
 
     LaunchedEffect(loginUiState.isSuccess, loginUiState.selectedMode) {
         if (loginUiState.isSuccess) {
@@ -109,18 +108,24 @@ fun AppNavGraph(
                 },
                 onGoogleLoginClick = { },
                 onNavigateToSignUp = {
+                    sessionViewModel.clearError()
                     navController.navigate(Screen.SignUp.route)
-                }
+                },
+                serverErrorMessage = loginUiState.errorMessage
             )
         }
 
         composable(Screen.SignUp.route) {
             SignUpScreen(
-                onSignUpClick = { _, _, _ -> },
+                onSignUpClick = { email, displayName, password ->
+                    sessionViewModel.signup(email, displayName, password)
+                },
                 onGoogleSignUpClick = { },
                 onNavigateToLogin = {
+                    sessionViewModel.clearError()
                     navController.popBackStack()
-                }
+                },
+                serverErrorMessage = loginUiState.errorMessage
             )
         }
 
@@ -129,15 +134,22 @@ fun AppNavGraph(
         }
 
         composable(Screen.GuardianHome.route) {
-            val guardianUserId = appSession.user.userId
+            val guardianHomeViewModel: GuardianHomeViewModel = viewModel(
+                factory = GuardianHomeViewModelFactory(
+                    appSessionRepository = dependencies.appSessionRepository
+                )
+            )
 
-            if (guardianUserId.isNullOrBlank()) {
-                // 아직 준비 안됐으면 아무것도 안 그리거나 loading
-                return@composable
-            }
+            val guardianUiState by guardianHomeViewModel.uiState.collectAsStateWithLifecycle()
 
             GuardianHomeScreen(
-                guardianUserId = guardianUserId,
+                uiState = guardianUiState,
+                onInviteClick = {
+                    guardianHomeViewModel.createInvite()
+                },
+                onDismissInviteDialog = {
+                    guardianHomeViewModel.dismissInviteDialog()
+                },
                 onLogout = {
                     sessionViewModel.logout()
                     navController.navigate(Screen.Login.route) {
