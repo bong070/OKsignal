@@ -7,9 +7,20 @@ data class AppSessionState(
     val relationship: RelationshipState = RelationshipState()
 ) {
     val isAuthenticated: Boolean
-        get() = session.isLoggedIn &&
-                !session.accessToken.isNullOrBlank() &&
-                !user.userId.isNullOrBlank()
+        get() {
+            val hasUser = !user.userId.isNullOrBlank()
+
+            val hasGuardianAuth =
+                relationship.canActAsGuardian &&
+                        session.isLoggedIn &&
+                        !session.accessToken.isNullOrBlank()
+
+            val hasMemberAuth =
+                relationship.canActAsMember &&
+                        session.isLoggedIn
+
+            return hasUser && (hasGuardianAuth || hasMemberAuth)
+        }
 
     val canSwitchModes: Boolean
         get() = relationship.canActAsGuardian && relationship.canActAsMember

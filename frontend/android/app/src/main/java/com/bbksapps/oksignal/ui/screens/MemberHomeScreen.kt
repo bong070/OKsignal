@@ -16,9 +16,13 @@ import com.bbksapps.oksignal.ui.components.CircleButton
 import com.bbksapps.oksignal.ui.theme.Dimens
 import com.bbksapps.oksignal.ui.theme.SignalGreen
 import com.bbksapps.oksignal.ui.theme.SignalRed
+import androidx.compose.material3.Text
+import com.bbksapps.oksignal.ui.common.asString
+import com.bbksapps.oksignal.ui.member.MemberHomeUiState
 
 @Composable
 fun MemberHomeScreen(
+    uiState: MemberHomeUiState,
     onOkClick: () -> Unit = {},
     onHelpClick: () -> Unit = {}
 ) {
@@ -30,12 +34,32 @@ fun MemberHomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         CircleButton(
-            text = stringResource(R.string.member_ok),
+            text = if (uiState.isCheckingIn) {
+                stringResource(R.string.checking_in)
+            } else {
+                stringResource(R.string.member_ok)
+            },
             backgroundColor = SignalGreen,
             onClick = onOkClick
         )
 
         Spacer(modifier = Modifier.height(Dimens.MemberButtonSpacing))
+
+        uiState.errorMessage?.let { error ->
+            Spacer(modifier = Modifier.height(Dimens.SpaceMd))
+            Text(
+                text = error.asString(),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        if (uiState.lastCheckInSuccess) {
+            Spacer(modifier = Modifier.height(Dimens.SpaceMd))
+            Text(
+                text = stringResource(R.string.check_in_success),
+                color = SignalGreen
+            )
+        }
 
         CircleButton(
             text = stringResource(R.string.member_help),

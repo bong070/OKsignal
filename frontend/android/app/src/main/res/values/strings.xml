@@ -90,4 +90,8 @@
 
     <string name="invite_failed">Invite failed</string>
     <string name="http_error">HTTP %1$d: %2$s</string>
+
+    <string name="checking_in">Checking in...</string>
+    <string name="check_in_success">Check-in sent.</string>
+    <string name="refresh">Refresh</string>
 </resources>

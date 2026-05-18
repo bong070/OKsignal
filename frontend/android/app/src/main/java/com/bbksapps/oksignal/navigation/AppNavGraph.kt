@@ -27,6 +27,8 @@ import com.bbksapps.oksignal.ui.start.AppStartViewModel
 import com.bbksapps.oksignal.ui.start.AppStartViewModelFactory
 import com.bbksapps.oksignal.ui.guardian.GuardianHomeViewModel
 import com.bbksapps.oksignal.ui.guardian.GuardianHomeViewModelFactory
+import com.bbksapps.oksignal.ui.member.MemberHomeViewModel
+import com.bbksapps.oksignal.ui.member.MemberHomeViewModelFactory
 
 @Composable
 fun AppNavGraph(
@@ -130,7 +132,24 @@ fun AppNavGraph(
         }
 
         composable(Screen.MemberHome.route) {
-            MemberHomeScreen()
+            val memberHomeViewModel: MemberHomeViewModel = viewModel(
+                factory = MemberHomeViewModelFactory(
+                    appSessionRepository = dependencies.appSessionRepository,
+                    heartbeatRepository = dependencies.heartbeatRepository
+                )
+            )
+
+            val memberUiState by memberHomeViewModel.uiState.collectAsStateWithLifecycle()
+
+            MemberHomeScreen(
+                uiState = memberUiState,
+                onOkClick = {
+                    memberHomeViewModel.checkIn()
+                },
+                onHelpClick = {
+                    // TODO: Need Help flow later
+                }
+            )
         }
 
         composable(Screen.GuardianHome.route) {
@@ -144,6 +163,7 @@ fun AppNavGraph(
 
             GuardianHomeScreen(
                 uiState = guardianUiState,
+                onRefresh = { guardianHomeViewModel.refreshMembers() },
                 onInviteClick = {
                     guardianHomeViewModel.createInvite()
                 },

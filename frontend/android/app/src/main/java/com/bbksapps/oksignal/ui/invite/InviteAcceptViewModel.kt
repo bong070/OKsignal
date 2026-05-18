@@ -67,12 +67,34 @@ class InviteAcceptViewModel(
                 )
 
                 if (response.success) {
+                    val memberUserId = response.member_user_id
+
+                    if (memberUserId.isNullOrBlank()) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = UiMessage.UNKNOWN_ERROR
+                        )
+                        return@launch
+                    }
+
+                    appSessionRepository.onLoginSuccess(
+                        userId = memberUserId,
+                        email = "",
+                        displayName = displayName,
+                        planType = "free",
+                        accessToken = "",
+                        refreshToken = null,
+                        tokenExpiresAt = null,
+                        canActAsGuardian = false,
+                        canActAsMember = true
+                    )
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isSuccess = true,
                         errorMessage = null
                     )
-                } else {
+                }else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = UiMessage.ACCEPT_INVITE_FAILED

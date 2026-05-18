@@ -1,23 +1,22 @@
-package com.bbksapps.oksignal.ui.session
+package com.bbksapps.oksignal.ui.member
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
-import com.bbksapps.oksignal.data.local.repository.AuthRepository
+import com.bbksapps.oksignal.data.local.repository.HeartbeatRepository
 
-class SessionViewModelFactory(
+class MemberHomeViewModelFactory(
     private val appSessionRepository: AppSessionRepository,
-    private val authRepository: AuthRepository
+    private val heartbeatRepository: HeartbeatRepository
 ) : ViewModelProvider.Factory {
-
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SessionViewModel::class.java)) {
-            return SessionViewModel(
+        if (modelClass.isAssignableFrom(MemberHomeViewModel::class.java)) {
+            return MemberHomeViewModel(
                 appSessionRepository = appSessionRepository,
-                authRepository = authRepository
+                heartbeatRepository = heartbeatRepository
             ) as T
         }
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

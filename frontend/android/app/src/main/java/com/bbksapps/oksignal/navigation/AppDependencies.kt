@@ -5,11 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
+import com.bbksapps.oksignal.data.local.repository.AuthRepository
 import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
+import com.bbksapps.oksignal.data.local.repository.HeartbeatRepository
 import com.bbksapps.oksignal.data.local.repository.RelationshipStoreRepository
 import com.bbksapps.oksignal.data.local.repository.SessionStoreRepository
 import com.bbksapps.oksignal.data.local.repository.UserStoreRepository
-import com.bbksapps.oksignal.data.repository.AuthRepository
 
 data class AppDependencies(
     val deviceStoreRepository: DeviceStoreRepository,
@@ -17,7 +18,8 @@ data class AppDependencies(
     val sessionStoreRepository: SessionStoreRepository,
     val relationshipStoreRepository: RelationshipStoreRepository,
     val appSessionRepository: AppSessionRepository,
-    val authRepository: AuthRepository
+    val authRepository: AuthRepository,
+    val heartbeatRepository: HeartbeatRepository
 )
 
 @Composable
@@ -42,6 +44,10 @@ fun rememberAppDependencies(): AppDependencies {
         AuthRepository()
     }
 
+    val heartbeatRepository = remember {
+        HeartbeatRepository()
+    }
+
     val appSessionRepository = remember(
         deviceStoreRepository,
         userStoreRepository,
@@ -61,7 +67,9 @@ fun rememberAppDependencies(): AppDependencies {
         userStoreRepository,
         sessionStoreRepository,
         relationshipStoreRepository,
-        appSessionRepository
+        appSessionRepository,
+        authRepository,
+        heartbeatRepository
     ) {
         AppDependencies(
             deviceStoreRepository = deviceStoreRepository,
@@ -69,7 +77,8 @@ fun rememberAppDependencies(): AppDependencies {
             sessionStoreRepository = sessionStoreRepository,
             relationshipStoreRepository = relationshipStoreRepository,
             appSessionRepository = appSessionRepository,
-            authRepository = authRepository
+            authRepository = authRepository,
+            heartbeatRepository = heartbeatRepository
         )
     }
 }

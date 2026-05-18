@@ -103,4 +103,8 @@ class GuardianHomeViewModel(
             inviteDialogText = null
         )
     }
+
+    fun refreshMembers() {
+        loadMembers()
+    }
 }

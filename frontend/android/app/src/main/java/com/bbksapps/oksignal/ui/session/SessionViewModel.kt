@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.model.AppMode
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
-import com.bbksapps.oksignal.data.repository.AuthRepository
+import com.bbksapps.oksignal.data.local.repository.AuthRepository
 import com.bbksapps.oksignal.ui.common.AppDefaults
 import com.bbksapps.oksignal.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow

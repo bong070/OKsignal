@@ -35,4 +35,9 @@ interface ApiService {
     suspend fun getGuardianMembers(
         @Query("guardian_user_id") guardianUserId: String
     ): GuardianMembersResponse
+
+    @POST("heartbeat")
+    suspend fun sendHeartbeat(
+        @Body request: HeartbeatRequest
+    ): HeartbeatResponse
 }

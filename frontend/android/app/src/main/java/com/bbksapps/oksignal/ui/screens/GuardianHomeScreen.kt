@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -65,6 +66,7 @@ data class GuardianMemberUiModel(
 @Composable
 fun GuardianHomeScreen(
     uiState: GuardianHomeUiState,
+    onRefresh: () -> Unit,
     onInviteClick: () -> Unit,
     onDismissInviteDialog: () -> Unit,
     onMemberClick: (GuardianMemberUiModel) -> Unit = {},
@@ -99,6 +101,13 @@ fun GuardianHomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.refresh)
+                        )
+                    }
+
                     Box {
                         IconButton(onClick = { showAccountMenu = true }) {
                             Icon(

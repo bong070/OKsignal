@@ -22,11 +22,13 @@ data class AcceptInviteRequest(
     val device_name: String? = null
 )
 
+
 data class AcceptInviteResponse(
     val success: Boolean,
     val error: String? = null,
     val link_created: Boolean? = null,
-    val member_created: Boolean? = null
+    val member_created: Boolean? = null,
+    val member_user_id: String? = null
 )
 
 data class GuardianMembersResponse(
@@ -114,4 +116,21 @@ data class AuthUserDto(
     val status: String? = null,
     val plan_type: String? = null,
     val subscription_status: String? = null
+)
+
+data class HeartbeatRequest(
+    val device_id: String,
+    val last_activity_at: String,
+    val last_known_lat: Double? = null,
+    val last_known_lng: Double? = null,
+    val last_known_location_at: String? = null
+)
+
+data class HeartbeatResponse(
+    val success: Boolean,
+    val device_id: String? = null,
+    val member_user_id: String? = null,
+    val last_ping_at: String? = null,
+    val last_activity_at: String? = null,
+    val error: String? = null
 )

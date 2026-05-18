@@ -90,4 +90,8 @@
 
     <string name="previous_page">이전 페이지</string>
     <string name="next_page">다음 페이지</string>
+
+    <string name="checking_in">체크인 중...</string>
+    <string name="check_in_success">체크인이 전송되었습니다.</string>
+    <string name="refresh">새로고침</string>
 </resources>

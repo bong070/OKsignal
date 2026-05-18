@@ -1,4 +1,4 @@
-package com.bbksapps.oksignal.data.repository
+package com.bbksapps.oksignal.data.local.repository
 
 import com.bbksapps.oksignal.data.remote.AuthLoginRequest
 import com.bbksapps.oksignal.data.remote.AuthResponse
