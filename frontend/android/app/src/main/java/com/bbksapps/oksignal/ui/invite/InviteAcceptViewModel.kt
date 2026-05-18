@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
 import com.bbksapps.oksignal.data.repository.InviteRepository
+import com.bbksapps.oksignal.ui.common.AppDefaults
+import com.bbksapps.oksignal.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,7 +39,16 @@ class InviteAcceptViewModel(
 
             if (currentDeviceId.isNullOrBlank()) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Device ID is not ready yet. Please try again."
+                    errorMessage = UiMessage.DEVICE_ID_NOT_READY_TRY_AGAIN
+                )
+                return@launch
+            }
+
+            val displayName = uiState.value.displayName.trim()
+
+            if (displayName.isBlank()) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = UiMessage.ENTER_NAME
                 )
                 return@launch
             }
@@ -51,7 +62,8 @@ class InviteAcceptViewModel(
                 val response = inviteRepository.acceptInvite(
                     token = inviteToken,
                     deviceId = currentDeviceId,
-                    deviceName = android.os.Build.MODEL ?: "Android Device"
+                    deviceName = android.os.Build.MODEL ?: AppDefaults.DEFAULT_DEVICE_NAME,
+                    displayName = displayName
                 )
 
                 if (response.success) {
@@ -63,13 +75,13 @@ class InviteAcceptViewModel(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = response.error ?: "Failed to accept invite."
+                        errorMessage = UiMessage.ACCEPT_INVITE_FAILED
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to accept invite."
+                    errorMessage = UiMessage.ACCEPT_INVITE_FAILED
                 )
             }
         }
@@ -77,6 +89,10 @@ class InviteAcceptViewModel(
 
     fun consumeSuccess() {
         _uiState.value = _uiState.value.copy(isSuccess = false)
+    }
+
+    fun onDisplayNameChange(value: String) {
+        _uiState.value = _uiState.value.copy(displayName = value)
     }
 
     fun clearError() {

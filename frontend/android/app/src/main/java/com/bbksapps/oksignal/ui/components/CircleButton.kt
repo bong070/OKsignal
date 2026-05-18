@@ -42,7 +42,7 @@ fun CircleButton(
         Text(
             text = text,
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onPrimary,
             textAlign = TextAlign.Center
         )
     }

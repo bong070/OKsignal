@@ -1,4 +1,31 @@
 <resources>
+    <string name="account">Account</string>
+    <string name="logout">Logout</string>
+    <string name="sign_out_title">Sign out?</string>
+    <string name="sign_out_message">You’ll need to sign in again to access your OKSignal account.</string>
+    <string name="sign_out">Sign out</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="join_oksignal">Join OKSignal</string>
+    <string name="invite_token_format">Invite token: %1$s</string>
+    <string name="device_id_format">Device ID: %1$s</string>
+    <string name="preparing_device">Preparing device...</string>
+    <string name="your_name">Your name</string>
+    <string name="accept_invite">Accept Invite</string>
+
+    <string name="error_user_not_ready">User not ready</string>
+    <string name="error_device_id_not_ready">Device ID is not ready yet.</string>
+    <string name="error_device_id_not_ready_try_again">Device ID is not ready yet. Please try again.</string>
+    <string name="error_login_required_fields">Email and password are required.</string>
+    <string name="error_signup_required_fields">Email, display name, and password are required.</string>
+    <string name="error_enter_name">Please enter your name.</string>
+    <string name="login_failed">Login failed.</string>
+    <string name="signup_failed">Signup failed.</string>
+    <string name="accept_invite_failed">Failed to accept invite.</string>
+    <string name="default_device_name">Android Device</string>
+    <string name="error_failed_to_load_members">Failed to load members.</string>
+    <string name="error_unknown">Unknown error.</string>
+
     <string name="app_name">OKSignal</string>
 
     <string name="login_title">Sign In</string>

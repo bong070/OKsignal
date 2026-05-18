@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.model.AppMode
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
 import com.bbksapps.oksignal.data.repository.AuthRepository
+import com.bbksapps.oksignal.ui.common.AppDefaults
+import com.bbksapps.oksignal.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,7 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val selectedMode: AppMode? = null,
-    val errorMessage: String? = null
+    val errorMessage: UiMessage? = null
 )
 
 class SessionViewModel(
@@ -29,7 +31,7 @@ class SessionViewModel(
     fun login(email: String, password: String) {
         if (email.isBlank() || password.isBlank()) {
             _loginUiState.value = LoginUiState(
-                errorMessage = "Email and password are required."
+                errorMessage = UiMessage.LOGIN_REQUIRED_FIELDS
             )
             return
         }
@@ -44,7 +46,7 @@ class SessionViewModel(
                 if (deviceId.isNullOrBlank()) {
                     _loginUiState.value = LoginUiState(
                         isLoading = false,
-                        errorMessage = "Device ID is not ready yet."
+                        errorMessage = UiMessage.DEVICE_ID_NOT_READY
                     )
                     return@launch
                 }
@@ -53,13 +55,13 @@ class SessionViewModel(
                     email = email.trim(),
                     password = password,
                     deviceId = deviceId,
-                    deviceName = android.os.Build.MODEL ?: "Android Device"
+                    deviceName = android.os.Build.MODEL ?: AppDefaults.DEFAULT_DEVICE_NAME
                 )
 
                 if (!response.success || response.user == null || response.token.isNullOrBlank()) {
                     _loginUiState.value = LoginUiState(
                         isLoading = false,
-                        errorMessage = response.error ?: "Login failed."
+                        errorMessage = UiMessage.LOGIN_FAILED
                     )
                     return@launch
                 }
@@ -84,7 +86,7 @@ class SessionViewModel(
             } catch (e: Exception) {
                 _loginUiState.value = LoginUiState(
                     isLoading = false,
-                    errorMessage = e.message ?: "Login failed."
+                    errorMessage = UiMessage.LOGIN_FAILED
                 )
             }
         }
@@ -93,7 +95,7 @@ class SessionViewModel(
     fun signup(email: String, displayName: String, password: String) {
         if (email.isBlank() || displayName.isBlank() || password.isBlank()) {
             _loginUiState.value = LoginUiState(
-                errorMessage = "Email, display name, and password are required."
+                errorMessage = UiMessage.SIGNUP_REQUIRED_FIELDS
             )
             return
         }
@@ -108,7 +110,7 @@ class SessionViewModel(
                 if (deviceId.isNullOrBlank()) {
                     _loginUiState.value = LoginUiState(
                         isLoading = false,
-                        errorMessage = "Device ID is not ready yet."
+                        errorMessage = UiMessage.DEVICE_ID_NOT_READY
                     )
                     return@launch
                 }
@@ -118,13 +120,13 @@ class SessionViewModel(
                     password = password,
                     displayName = displayName.trim(),
                     deviceId = deviceId,
-                    deviceName = android.os.Build.MODEL ?: "Android Device"
+                    deviceName = android.os.Build.MODEL ?: AppDefaults.DEFAULT_DEVICE_NAME
                 )
 
                 if (!response.success || response.user == null || response.token.isNullOrBlank()) {
                     _loginUiState.value = LoginUiState(
                         isLoading = false,
-                        errorMessage = response.error ?: "Signup failed."
+                        errorMessage = UiMessage.SIGNUP_FAILED
                     )
                     return@launch
                 }
@@ -149,7 +151,7 @@ class SessionViewModel(
             } catch (e: Exception) {
                 _loginUiState.value = LoginUiState(
                     isLoading = false,
-                    errorMessage = e.message ?: "Signup failed."
+                    errorMessage = UiMessage.SIGNUP_FAILED
                 )
             }
         }

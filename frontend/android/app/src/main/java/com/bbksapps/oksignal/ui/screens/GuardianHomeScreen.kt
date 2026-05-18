@@ -51,11 +51,12 @@ import com.bbksapps.oksignal.ui.components.GuardianMemberCard
 import com.bbksapps.oksignal.ui.guardian.GuardianHomeUiState
 import com.bbksapps.oksignal.ui.theme.Dimens
 import androidx.compose.runtime.rememberCoroutineScope
+import com.bbksapps.oksignal.ui.common.asString
 import kotlinx.coroutines.launch
 
 data class GuardianMemberUiModel(
-    val displayName: String,
-    val lastActive: String,
+    val displayName: String?,
+    val lastActive: String?,
     val lastLocation: String?,
     val isActive: Boolean
 )
@@ -96,13 +97,13 @@ fun GuardianHomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("OKSignal") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     Box {
                         IconButton(onClick = { showAccountMenu = true }) {
                             Icon(
                                 imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "Account"
+                                contentDescription = stringResource(R.string.account)
                             )
                         }
 
@@ -111,7 +112,7 @@ fun GuardianHomeScreen(
                             onDismissRequest = { showAccountMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Logout") },
+                                text = { Text(stringResource(R.string.logout)) },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Logout,
@@ -132,7 +133,7 @@ fun GuardianHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF3F4F6))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
                 .padding(Dimens.SpaceLg)
         ) {
@@ -152,7 +153,7 @@ fun GuardianHomeScreen(
 
             uiState.errorMessage?.let { error ->
                 Text(
-                    text = error,
+                    text = error.asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = Dimens.SpaceSm)
@@ -249,9 +250,9 @@ fun GuardianHomeScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Sign out?") },
+            title = { Text(stringResource(R.string.sign_out_title)) },
             text = {
-                Text("You’ll need to sign in again to access your OKSignal account.")
+                Text(stringResource(R.string.sign_out_message))
             },
             confirmButton = {
                 TextButton(
@@ -260,14 +261,14 @@ fun GuardianHomeScreen(
                         onLogout()
                     }
                 ) {
-                    Text("Sign out")
+                    Text(stringResource(R.string.sign_out))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showLogoutDialog = false }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

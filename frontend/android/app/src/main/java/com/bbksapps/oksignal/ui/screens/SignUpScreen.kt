@@ -32,6 +32,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.bbksapps.oksignal.R
+import com.bbksapps.oksignal.ui.common.UiMessage
+import com.bbksapps.oksignal.ui.common.asString
 import com.bbksapps.oksignal.ui.theme.Dimens
 
 @Composable
@@ -39,7 +41,7 @@ fun SignUpScreen(
     onSignUpClick: (String, String, String) -> Unit,
     onGoogleSignUpClick: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    serverErrorMessage: String? = null
+    serverErrorMessage: UiMessage? = null
 ) {
     var email by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
@@ -49,14 +51,7 @@ fun SignUpScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    val errorEnterEmail = stringResource(R.string.error_enter_email)
-    val errorEnterDisplayName = stringResource(R.string.error_enter_display_name)
-    val errorEnterPassword = stringResource(R.string.error_enter_password)
-    val errorEnterConfirmPassword = stringResource(R.string.error_enter_confirm_password)
-    val errorPasswordMismatch = stringResource(R.string.error_password_mismatch)
-    val errorPasswordTooShort = stringResource(R.string.error_password_too_short)
+    var errorMessage by remember { mutableStateOf<UiMessage?>(null) }
 
     Column(
         modifier = Modifier
@@ -183,7 +178,7 @@ fun SignUpScreen(
 
         visibleErrorMessage?.let {
             Text(
-                text = it,
+                text = it.asString(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.fillMaxWidth()
@@ -197,12 +192,12 @@ fun SignUpScreen(
                 val trimmedDisplayName = displayName.trim()
 
                 errorMessage = when {
-                    trimmedEmail.isBlank() -> errorEnterEmail
-                    trimmedDisplayName.isBlank() -> errorEnterDisplayName
-                    password.isBlank() -> errorEnterPassword
-                    confirmPassword.isBlank() -> errorEnterConfirmPassword
-                    password != confirmPassword -> errorPasswordMismatch
-                    password.length < 6 -> errorPasswordTooShort
+                    trimmedEmail.isBlank() -> UiMessage.ENTER_EMAIL
+                    trimmedDisplayName.isBlank() -> UiMessage.ENTER_DISPLAY_NAME
+                    password.isBlank() -> UiMessage.ENTER_PASSWORD
+                    confirmPassword.isBlank() -> UiMessage.ENTER_CONFIRM_PASSWORD
+                    password != confirmPassword -> UiMessage.PASSWORD_MISMATCH
+                    password.length < 6 -> UiMessage.PASSWORD_TOO_SHORT
                     else -> null
                 }
 

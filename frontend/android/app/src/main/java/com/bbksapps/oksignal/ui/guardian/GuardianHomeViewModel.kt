@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
 import com.bbksapps.oksignal.data.repository.GuardianRepository
 import com.bbksapps.oksignal.data.repository.InviteRepository
+import com.bbksapps.oksignal.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +32,7 @@ class GuardianHomeViewModel(
 
             if (userId.isNullOrBlank()) {
                 _uiState.value = GuardianHomeUiState(
-                    errorMessage = "User not ready"
+                    errorMessage = UiMessage.USER_NOT_READY
                 )
                 return@launch
             }
@@ -46,8 +47,8 @@ class GuardianHomeViewModel(
                         isLoading = false,
                         members = response.members.map { dto ->
                             GuardianMemberUiModel(
-                                displayName = dto.member_display_name ?: "Unknown",
-                                lastActive = dto.last_activity_at ?: "No activity",
+                                displayName = dto.member_display_name,
+                                lastActive = dto.last_activity_at,
                                 lastLocation = if (dto.last_known_lat != null && dto.last_known_lng != null) {
                                     "${dto.last_known_lng}, ${dto.last_known_lat}"
                                 } else null,
@@ -58,13 +59,13 @@ class GuardianHomeViewModel(
                 } else {
                     _uiState.value = GuardianHomeUiState(
                         isLoading = false,
-                        errorMessage = response.error ?: "Failed to load members"
+                        errorMessage = UiMessage.FAILED_TO_LOAD_MEMBERS
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = GuardianHomeUiState(
                     isLoading = false,
-                    errorMessage = e.message ?: "Unknown error"
+                    errorMessage = UiMessage.UNKNOWN_ERROR
                 )
             }
         }
@@ -82,14 +83,16 @@ class GuardianHomeViewModel(
                     inviteDialogText = if (response.success) {
                         response.invite_link
                     } else {
-                        response.error ?: "Invite failed"
+                        null
                     },
-                    inviteDialogIsError = !response.success
+                    inviteDialogIsError = !response.success,
+                    errorMessage = if (response.success) null else UiMessage.UNKNOWN_ERROR
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    inviteDialogText = e.message ?: "Invite failed",
-                    inviteDialogIsError = true
+                    inviteDialogText = null,
+                    inviteDialogIsError = true,
+                    errorMessage = UiMessage.UNKNOWN_ERROR
                 )
             }
         }

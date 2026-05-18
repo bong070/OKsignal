@@ -23,8 +23,8 @@ import com.bbksapps.oksignal.ui.theme.SignalRed
 
 @Composable
 fun GuardianMemberCard(
-    displayName: String,
-    lastActive: String,
+    displayName: String?,
+    lastActive: String?,
     lastLocation: String?,
     isActive: Boolean,
     onClick: () -> Unit
@@ -55,7 +55,7 @@ fun GuardianMemberCard(
             verticalArrangement = Arrangement.Top
         ) {
             Text(
-                text = displayName,
+                text = displayName ?: stringResource(R.string.unknown_member),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimary
@@ -69,7 +69,7 @@ fun GuardianMemberCard(
             )
 
             Text(
-                text = lastActive,
+                text = lastActive ?: stringResource(R.string.no_activity),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.padding(top = Dimens.SpaceXs)

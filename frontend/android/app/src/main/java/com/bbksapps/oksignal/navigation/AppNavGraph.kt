@@ -187,6 +187,7 @@ fun AppNavGraph(
             InviteAcceptScreen(
                 inviteToken = token,
                 uiState = inviteUiState,
+                onDisplayNameChange = inviteAcceptViewModel::onDisplayNameChange,
                 onAcceptClick = {
                     inviteAcceptViewModel.acceptInvite(token)
                 }

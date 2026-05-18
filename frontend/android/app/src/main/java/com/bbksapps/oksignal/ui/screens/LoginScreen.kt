@@ -37,21 +37,20 @@ import com.bbksapps.oksignal.ui.theme.Dimens
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.LocalContext
+import com.bbksapps.oksignal.ui.common.UiMessage
+import com.bbksapps.oksignal.ui.common.asString
 
 @Composable
 fun LoginScreen(
     onLoginClick: (String, String) -> Unit,
     onGoogleLoginClick: () -> Unit,
     onNavigateToSignUp: () -> Unit,
-    serverErrorMessage: String? = null
+    serverErrorMessage: UiMessage? = null
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    val errorEnterEmail = stringResource(R.string.error_enter_email)
-    val errorEnterPassword = stringResource(R.string.error_enter_password)
+    var errorMessage by remember { mutableStateOf<UiMessage?>(null) }
     val context = LocalContext.current
 
     BackHandler {
@@ -151,7 +150,7 @@ fun LoginScreen(
 
         visibleErrorMessage?.let {
             Text(
-                text = it,
+                text = it.asString(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.fillMaxWidth()
@@ -164,8 +163,8 @@ fun LoginScreen(
                 val trimmedEmail = email.trim()
 
                 errorMessage = when {
-                    trimmedEmail.isBlank() -> errorEnterEmail
-                    password.isBlank() -> errorEnterPassword
+                    trimmedEmail.isBlank() -> UiMessage.ENTER_EMAIL
+                    password.isBlank() -> UiMessage.ENTER_PASSWORD
                     else -> null
                 }
 
