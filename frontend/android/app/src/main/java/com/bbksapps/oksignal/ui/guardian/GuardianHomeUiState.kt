@@ -8,5 +8,6 @@ data class GuardianHomeUiState(
     val members: List<GuardianMemberUiModel> = emptyList(),
     val errorMessage: UiMessage? = null,
     val inviteDialogText: String? = null,
-    val inviteDialogIsError: Boolean = false
+    val inviteDialogIsError: Boolean = false,
+    val refreshedAtMillis: Long = System.currentTimeMillis()
 )

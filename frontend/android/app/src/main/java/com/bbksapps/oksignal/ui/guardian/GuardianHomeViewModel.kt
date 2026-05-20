@@ -52,9 +52,10 @@ class GuardianHomeViewModel(
                                 lastLocation = if (dto.last_known_lat != null && dto.last_known_lng != null) {
                                     "${dto.last_known_lng}, ${dto.last_known_lat}"
                                 } else null,
-                                isActive = dto.last_activity_at != null
+                                isActive = dto.last_activity_at != null,
                             )
-                        }
+                        },
+                        refreshedAtMillis = System.currentTimeMillis()
                     )
                 } else {
                     _uiState.value = GuardianHomeUiState(

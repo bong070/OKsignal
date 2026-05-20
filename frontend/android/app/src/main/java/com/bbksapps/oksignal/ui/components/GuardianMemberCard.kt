@@ -22,6 +22,7 @@ import com.bbksapps.oksignal.ui.theme.SignalGreen
 import com.bbksapps.oksignal.ui.theme.SignalRed
 import com.bbksapps.oksignal.ui.common.calculateTimeAgo
 import com.bbksapps.oksignal.ui.common.asString
+import androidx.compose.runtime.remember
 
 @Composable
 fun GuardianMemberCard(
@@ -29,12 +30,15 @@ fun GuardianMemberCard(
     lastActive: String?,
     lastLocation: String?,
     isActive: Boolean,
+    refreshTick: Long,
     onClick: () -> Unit
 ) {
     val backgroundColor = if (isActive) SignalGreen else SignalRed
-    val lastActiveText =
-        calculateTimeAgo(lastActive).asString()
-            ?: stringResource(R.string.no_activity)
+    val timeAgoMessage = remember(lastActive, refreshTick) {
+        calculateTimeAgo(lastActive)
+    }
+    val lastActiveText = timeAgoMessage.asString()
+        ?: stringResource(R.string.no_activity)
 
     Card(
         modifier = Modifier

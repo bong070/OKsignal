@@ -177,6 +177,7 @@ fun GuardianHomeScreen(
             ) { pageIndex ->
                 GuardianPageContent(
                     items = pages[pageIndex],
+                    refreshedAtMillis = uiState.refreshedAtMillis,
                     onMemberClick = onMemberClick,
                     onInviteClick = onInviteClick
                 )
@@ -347,6 +348,7 @@ fun GuardianHomeScreen(
 @Composable
 private fun GuardianPageContent(
     items: List<GuardianMemberUiModel?>,
+    refreshedAtMillis: Long,
     onMemberClick: (GuardianMemberUiModel) -> Unit,
     onInviteClick: () -> Unit
 ) {
@@ -371,6 +373,7 @@ private fun GuardianPageContent(
                         lastActive = item.lastActive,
                         lastLocation = item.lastLocation,
                         isActive = item.isActive,
+                        refreshTick = refreshedAtMillis,
                         onClick = { onMemberClick(item) }
                     )
                 } ?: EmptyMemberCard(onClick = onInviteClick)
@@ -387,6 +390,7 @@ private fun GuardianPageContent(
                         lastActive = item.lastActive,
                         lastLocation = item.lastLocation,
                         isActive = item.isActive,
+                        refreshTick = refreshedAtMillis,
                         onClick = { onMemberClick(item) }
                     )
                 } ?: EmptyMemberCard(onClick = onInviteClick)
@@ -410,6 +414,7 @@ private fun GuardianPageContent(
                         lastActive = item.lastActive,
                         lastLocation = item.lastLocation,
                         isActive = item.isActive,
+                        refreshTick = refreshedAtMillis,
                         onClick = { onMemberClick(item) }
                     )
                 } ?: EmptyMemberCard(onClick = onInviteClick)
@@ -426,6 +431,7 @@ private fun GuardianPageContent(
                         lastActive = item.lastActive,
                         lastLocation = item.lastLocation,
                         isActive = item.isActive,
+                        refreshTick = refreshedAtMillis,
                         onClick = { onMemberClick(item) }
                     )
                 } ?: EmptyMemberCard(onClick = onInviteClick)
