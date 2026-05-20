@@ -10,10 +10,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
+import java.time.Instant
 
 class InviteAcceptViewModel(
     private val appSessionRepository: AppSessionRepository,
-    private val inviteRepository: InviteRepository
+    private val inviteRepository: InviteRepository,
+    private val deviceStoreRepository: DeviceStoreRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InviteAcceptUiState())
@@ -87,6 +90,10 @@ class InviteAcceptViewModel(
                         tokenExpiresAt = null,
                         canActAsGuardian = false,
                         canActAsMember = true
+                    )
+
+                    deviceStoreRepository.saveLastActivityAt(
+                        Instant.now().toString()
                     )
 
                     _uiState.value = _uiState.value.copy(

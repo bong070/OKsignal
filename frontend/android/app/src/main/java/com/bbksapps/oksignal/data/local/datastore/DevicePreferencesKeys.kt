@@ -10,4 +10,5 @@ object DevicePreferencesKeys {
     val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     val FIRST_INSTALLED_AT = longPreferencesKey("first_installed_at")
     val LAST_APP_VERSION = stringPreferencesKey("last_app_version")
+    val LAST_ACTIVITY_AT = stringPreferencesKey("last_activity_at")
 }

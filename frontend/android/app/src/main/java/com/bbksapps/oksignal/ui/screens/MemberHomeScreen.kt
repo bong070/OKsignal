@@ -19,6 +19,16 @@ import com.bbksapps.oksignal.ui.theme.SignalRed
 import androidx.compose.material3.Text
 import com.bbksapps.oksignal.ui.common.asString
 import com.bbksapps.oksignal.ui.member.MemberHomeUiState
+import androidx.compose.ui.platform.LocalContext
+import com.bbksapps.oksignal.util.hasUsageAccessPermission
+import com.bbksapps.oksignal.util.openUsageAccessSettings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 @Composable
 fun MemberHomeScreen(
@@ -26,6 +36,49 @@ fun MemberHomeScreen(
     onOkClick: () -> Unit = {},
     onHelpClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    var showUsageAccessDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (!hasUsageAccessPermission(context)) {
+            showUsageAccessDialog = true
+        }
+    }
+
+    if (showUsageAccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showUsageAccessDialog = false
+            },
+            title = {
+                Text(stringResource(R.string.usage_access_title))
+            },
+            text = {
+                Text(stringResource(R.string.usage_access_message))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUsageAccessDialog = false
+                        openUsageAccessSettings(context)
+                    }
+                ) {
+                    Text(stringResource(R.string.open_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUsageAccessDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.later))
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()

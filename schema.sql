@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   display_name TEXT,
   email TEXT,
   phone_number TEXT,
+  password_hash TEXT,
+  password_salt TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL

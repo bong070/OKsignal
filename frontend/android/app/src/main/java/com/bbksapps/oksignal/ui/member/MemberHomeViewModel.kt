@@ -3,16 +3,19 @@ package com.bbksapps.oksignal.ui.member
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
+import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
 import com.bbksapps.oksignal.data.local.repository.HeartbeatRepository
 import com.bbksapps.oksignal.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 class MemberHomeViewModel(
     private val appSessionRepository: AppSessionRepository,
-    private val heartbeatRepository: HeartbeatRepository
+    private val heartbeatRepository: HeartbeatRepository,
+    private val deviceStoreRepository: DeviceStoreRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MemberHomeUiState())
@@ -39,7 +42,14 @@ class MemberHomeViewModel(
                     return@launch
                 }
 
-                val success = heartbeatRepository.sendHeartbeat(deviceId)
+                val now = Instant.now().toString()
+
+                deviceStoreRepository.saveLastActivityAt(now)
+
+                val success = heartbeatRepository.sendHeartbeat(
+                    deviceId = deviceId,
+                    lastActivityAt = now
+                )
 
                 _uiState.value = _uiState.value.copy(
                     isCheckingIn = false,

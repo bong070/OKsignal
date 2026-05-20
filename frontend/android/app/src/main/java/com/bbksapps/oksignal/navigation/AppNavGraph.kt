@@ -29,6 +29,8 @@ import com.bbksapps.oksignal.ui.guardian.GuardianHomeViewModel
 import com.bbksapps.oksignal.ui.guardian.GuardianHomeViewModelFactory
 import com.bbksapps.oksignal.ui.member.MemberHomeViewModel
 import com.bbksapps.oksignal.ui.member.MemberHomeViewModelFactory
+import androidx.compose.ui.platform.LocalContext
+import com.bbksapps.oksignal.worker.HeartbeatScheduler
 
 @Composable
 fun AppNavGraph(
@@ -54,8 +56,11 @@ fun AppNavGraph(
     val startDestination by appStartViewModel.startDestination.collectAsStateWithLifecycle()
     val loginUiState by sessionViewModel.loginUiState.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+
     LaunchedEffect(loginUiState.isSuccess, loginUiState.selectedMode) {
         if (loginUiState.isSuccess) {
+            //HeartbeatScheduler.start(context.applicationContext)
             when (loginUiState.selectedMode) {
                 AppMode.GUARDIAN -> {
                     navController.navigate(Screen.GuardianHome.route) {
@@ -135,7 +140,8 @@ fun AppNavGraph(
             val memberHomeViewModel: MemberHomeViewModel = viewModel(
                 factory = MemberHomeViewModelFactory(
                     appSessionRepository = dependencies.appSessionRepository,
-                    heartbeatRepository = dependencies.heartbeatRepository
+                    heartbeatRepository = dependencies.heartbeatRepository,
+                    deviceStoreRepository = dependencies.deviceStoreRepository
                 )
             )
 
@@ -171,6 +177,7 @@ fun AppNavGraph(
                     guardianHomeViewModel.dismissInviteDialog()
                 },
                 onLogout = {
+                    //HeartbeatScheduler.stop(context.applicationContext)
                     sessionViewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
@@ -189,7 +196,8 @@ fun AppNavGraph(
             val inviteAcceptViewModel: InviteAcceptViewModel = viewModel(
                 factory = InviteAcceptViewModelFactory(
                     appSessionRepository = dependencies.appSessionRepository,
-                    inviteRepository = InviteRepository()
+                    inviteRepository = InviteRepository(),
+                    deviceStoreRepository = dependencies.deviceStoreRepository
                 )
             )
 
@@ -197,6 +205,8 @@ fun AppNavGraph(
 
             LaunchedEffect(inviteUiState.isSuccess) {
                 if (inviteUiState.isSuccess) {
+                    HeartbeatScheduler.start(context.applicationContext)
+
                     inviteAcceptViewModel.consumeSuccess()
                     navController.navigate(Screen.MemberHome.route) {
                         popUpTo(Screen.InviteAccept.route) { inclusive = true }

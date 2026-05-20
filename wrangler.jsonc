@@ -14,5 +14,8 @@
 		"crons": [
 			"*/10 * * * *"
 		]
+	},
+	"vars": {
+	  "ENVIRONMENT": "production"
 	}
 }

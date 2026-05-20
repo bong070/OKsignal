@@ -1,3 +1,11 @@
+const INVITE_LINK_SCHEME = "oksignal://invite";
+const GROUP_INVITE_LINK_SCHEME = "oksignal://group-invite";
+
+const DEFAULT_INVITE_EXPIRES_HOURS = 168;
+
+const INACTIVITY_THRESHOLD_SECONDS = 4 * 3600;
+const HEARTBEAT_GRACE_SECONDS = 2 * 3600;
+
 export default {
   async fetch(request, env) {
     try {
@@ -7,6 +15,14 @@ export default {
       if (request.method === "GET" && pathname === "/health") {
         return handleHealth(env);
       }
+	  
+	  if (request.method === "POST" && pathname === "/auth/signup") {
+	    return handleAuthSignup(request, env);
+	  }
+
+	  if (request.method === "POST" && pathname === "/auth/login") {
+	    return handleAuthLogin(request, env);
+	  }
 
       if (request.method === "POST" && pathname === "/register") {
         return handleRegister(request, env);
@@ -52,10 +68,18 @@ export default {
         return handleGetGroupMembers(request, env);
       }
 
-      // Temporary helper for local MVP testing. Replace with billing webhook later.
-      if (request.method === "POST" && pathname === "/subscriptions/update") {
-        return handleSubscriptionUpdate(request, env);
-      }
+	  // Temporary helper for local MVP testing. Replace with billing webhook later.
+	  if (request.method === "POST" && pathname === "/subscriptions/update") {
+
+	    if (env.ENVIRONMENT === "production") {
+		  return jsonResponse(
+		    { success: false, error: "Not available in production" },
+		    403
+		  );
+	    }
+
+	    return handleSubscriptionUpdate(request, env);
+	  }
 
       return json({ success: false, error: "Not Found" }, 404);
     } catch (e) {
@@ -243,7 +267,7 @@ async function handleCreateInvite(request, env) {
       reused: true,
       invite_token_id: existingInvite.id,
       invite_token: existingInvite.token,
-      invite_link: `oksignal://invite?token=${encodeURIComponent(existingInvite.token)}`,
+      invite_link: `${INVITE_LINK_SCHEME}?token=${encodeURIComponent(token)}`,
       expires_at: existingInvite.expires_at,
       created_at: existingInvite.created_at,
     });
@@ -273,7 +297,7 @@ async function handleCreateInvite(request, env) {
     reused: false,
     invite_token_id: tokenId,
     invite_token: token,
-    invite_link: `oksignal://invite?token=${encodeURIComponent(token)}`,
+    invite_link: `${INVITE_LINK_SCHEME}?token=${encodeURIComponent(token)}`,
     expires_at: expiresAt,
     created_at: now,
   });
@@ -426,6 +450,7 @@ async function handleAcceptInvite(request, env) {
       member: serializeUser(member),
       link_created: false,
       member_created: false,
+	  member_user_id: memberUserId,
     });
   }
 
@@ -456,6 +481,7 @@ async function handleAcceptInvite(request, env) {
     member: serializeUser(member),
     link_created: true,
     member_created: memberCreated,
+	member_user_id: memberUserId,
   });
 }
 
@@ -975,8 +1001,8 @@ async function checkInactivityAlerts(env) {
     WHERE gml.status = 'active'
       AND d.last_activity_at IS NOT NULL
       AND d.last_ping_at IS NOT NULL
-      AND (strftime('%s','now') - strftime('%s', d.last_activity_at)) > 4 * 3600
-      AND (strftime('%s','now') - strftime('%s', d.last_ping_at)) > 2 * 3600
+      AND (strftime('%s','now') - strftime('%s', d.last_activity_at)) > INACTIVITY_THRESHOLD_SECONDS
+      AND (strftime('%s','now') - strftime('%s', d.last_ping_at)) > HEARTBEAT_GRACE_SECONDS
       AND a.id IS NULL
   `).all();
 
@@ -1186,7 +1212,7 @@ async function handleCreateGroupInvite(request, env) {
     success: true,
     group_invite_id: inviteId,
     invite_token: token,
-    invite_link: `oksignal://group-invite?token=${encodeURIComponent(token)}`,
+    invite_link: `${GROUP_INVITE_LINK_SCHEME}?token=${encodeURIComponent(token)}`,
     expires_at: expiresAt,
     active_invite_count_for_group: activeInviteCount + 1,
   });
@@ -1602,6 +1628,152 @@ async function handleGetGroupMembers(request, env) {
   });
 }
 
+async function handleAuthSignup(request, env) {
+  const body = await request.json();
+  const {
+    email,
+    password,
+    display_name,
+    device_id,
+    fcm_token,
+    device_name,
+  } = body;
+
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return json({ success: false, error: "email is required" }, 400);
+  }
+
+  if (!validatePassword(password)) {
+    return json({ success: false, error: "Password must be at least 8 characters" }, 400);
+  }
+
+  if (!device_id) {
+    return json({ success: false, error: "device_id is required" }, 400);
+  }
+
+  const existingUser = await env.DB
+    .prepare(`SELECT id FROM users WHERE lower(email) = ?`)
+    .bind(normalizedEmail)
+    .first();
+
+  if (existingUser) {
+    return json({ success: false, error: "Email already exists" }, 409);
+  }
+
+  const now = isoNow();
+  const userId = crypto.randomUUID();
+  const passwordResult = await hashPassword(password);
+
+  await env.DB.batch([
+    env.DB
+      .prepare(`
+        INSERT INTO users (
+          id, display_name, email, phone_number, password_hash, password_salt, status, created_at, updated_at
+        )
+        VALUES (?, ?, ?, NULL, ?, ?, 'active', ?, ?)
+      `)
+      .bind(
+        userId,
+        display_name ?? null,
+        normalizedEmail,
+        passwordResult.hash,
+        passwordResult.salt,
+        now,
+        now
+      ),
+
+    env.DB
+      .prepare(`
+        INSERT OR REPLACE INTO devices (
+          id, user_id, platform, device_name, push_token, created_at, updated_at
+        )
+        VALUES (?, ?, 'android', ?, ?, ?, ?)
+      `)
+      .bind(device_id, userId, device_name ?? null, fcm_token ?? null, now, now),
+
+    env.DB
+      .prepare(`
+        INSERT INTO subscriptions (
+          id, user_id, plan_type, status, started_at, created_at, updated_at
+        )
+        VALUES (?, ?, 'free', 'active', ?, ?, ?)
+      `)
+      .bind(crypto.randomUUID(), userId, now, now, now),
+  ]);
+
+  const user = await getUserWithPlan(env, userId);
+
+  return json({
+    success: true,
+    token: generateSessionToken(),
+    user: serializeUser(user),
+  });
+}
+
+async function handleAuthLogin(request, env) {
+  const body = await request.json();
+  const { email, password, device_id, fcm_token, device_name } = body;
+
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail || !password) {
+    return json({ success: false, error: "email and password are required" }, 400);
+  }
+
+  const user = await env.DB
+    .prepare(`
+      SELECT u.*, s.plan_type, s.status AS subscription_status
+      FROM users u
+      LEFT JOIN subscriptions s
+        ON s.user_id = u.id
+       AND s.status IN ('active', 'grace_period')
+      WHERE lower(u.email) = ?
+      LIMIT 1
+    `)
+    .bind(normalizedEmail)
+    .first();
+
+  if (!user) {
+    return json({ success: false, error: "Invalid email or password" }, 401);
+  }
+
+  const passwordOk = await verifyPassword(password, user.password_salt, user.password_hash);
+
+  if (!passwordOk) {
+    return json({ success: false, error: "Invalid email or password" }, 401);
+  }
+
+  const now = isoNow();
+
+  if (device_id) {
+    await env.DB
+      .prepare(`
+        INSERT OR REPLACE INTO devices (
+          id, user_id, platform, device_name, push_token, created_at, updated_at
+        )
+        VALUES (?, ?, 'android', ?, ?, COALESCE((SELECT created_at FROM devices WHERE id = ?), ?), ?)
+      `)
+      .bind(
+        device_id,
+        user.id,
+        device_name ?? null,
+        fcm_token ?? null,
+        device_id,
+        now,
+        now
+      )
+      .run();
+  }
+
+  return json({
+    success: true,
+    token: generateSessionToken(),
+    user: serializeUser(user),
+  });
+}
+
 function serializeUser(user) {
   return {
     id: user.id,
@@ -1685,6 +1857,63 @@ function normalizeAlertMetadata(metadata) {
     last_ping_at: normalizeTimestamp(metadata.last_ping_at),
     last_known_location_at: normalizeTimestamp(metadata.last_known_location_at),
   };
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function validatePassword(password) {
+  return typeof password === "string" && password.length >= 8;
+}
+
+function bytesToHex(bytes) {
+  return [...new Uint8Array(bytes)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+async function hashPassword(password, saltHex) {
+  const encoder = new TextEncoder();
+  const salt = saltHex ? hexToBytes(saltHex) : crypto.getRandomValues(new Uint8Array(16));
+
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+
+  return {
+    salt: bytesToHex(salt),
+    hash: bytesToHex(derivedBits),
+  };
+}
+
+async function verifyPassword(password, saltHex, expectedHash) {
+  if (!saltHex || !expectedHash) return false;
+  const result = await hashPassword(password, saltHex);
+  return result.hash === expectedHash;
 }
 
 function json(data, status = 200) {

@@ -20,6 +20,8 @@ import com.bbksapps.oksignal.ui.theme.CardBorderColor
 import com.bbksapps.oksignal.ui.theme.Dimens
 import com.bbksapps.oksignal.ui.theme.SignalGreen
 import com.bbksapps.oksignal.ui.theme.SignalRed
+import com.bbksapps.oksignal.ui.common.calculateTimeAgo
+import com.bbksapps.oksignal.ui.common.asString
 
 @Composable
 fun GuardianMemberCard(
@@ -30,6 +32,9 @@ fun GuardianMemberCard(
     onClick: () -> Unit
 ) {
     val backgroundColor = if (isActive) SignalGreen else SignalRed
+    val lastActiveText =
+        calculateTimeAgo(lastActive).asString()
+            ?: stringResource(R.string.no_activity)
 
     Card(
         modifier = Modifier
@@ -69,7 +74,7 @@ fun GuardianMemberCard(
             )
 
             Text(
-                text = lastActive ?: stringResource(R.string.no_activity),
+                text = lastActiveText,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.padding(top = Dimens.SpaceXs)

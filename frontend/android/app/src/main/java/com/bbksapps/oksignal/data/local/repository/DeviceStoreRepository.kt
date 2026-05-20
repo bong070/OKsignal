@@ -19,7 +19,8 @@ class DeviceStoreRepository(context: Context) {
             fcmToken = prefs[DevicePreferencesKeys.FCM_TOKEN],
             onboardingCompleted = prefs[DevicePreferencesKeys.ONBOARDING_COMPLETED] ?: false,
             firstInstalledAt = prefs[DevicePreferencesKeys.FIRST_INSTALLED_AT],
-            lastAppVersion = prefs[DevicePreferencesKeys.LAST_APP_VERSION]
+            lastAppVersion = prefs[DevicePreferencesKeys.LAST_APP_VERSION],
+            lastActivityAt = prefs[DevicePreferencesKeys.LAST_ACTIVITY_AT]
         )
     }
 
@@ -55,5 +56,11 @@ class DeviceStoreRepository(context: Context) {
 
     suspend fun clearAll() {
         dataStore.edit { it.clear() }
+    }
+
+    suspend fun saveLastActivityAt(timestamp: String) {
+        dataStore.edit { prefs ->
+            prefs[DevicePreferencesKeys.LAST_ACTIVITY_AT] = timestamp
+        }
     }
 }

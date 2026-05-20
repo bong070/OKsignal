@@ -5,5 +5,6 @@ data class DeviceState(
     val fcmToken: String? = null,
     val onboardingCompleted: Boolean = false,
     val firstInstalledAt: Long? = null,
-    val lastAppVersion: String? = null
+    val lastAppVersion: String? = null,
+    val lastActivityAt: String? = null
 )
