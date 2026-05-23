@@ -64,11 +64,9 @@ Current status:
 
 ---
 
-## Repository Status
+## Development Status
 
-The current public repository primarily contains the backend MVP and project documentation.
-
-The Android client is under active development in separate working branches while the architecture and APIs continue to evolve.
+Android client development is currently active in frontend feature branches while APIs and backend architecture continue to evolve.
 
 ---
 
