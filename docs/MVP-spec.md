@@ -1,135 +1,152 @@
-# OKSignal MVP Spec Update (2026-04-12)
+# OKSignal MVP Specification
 
-## Why this update exists
-The original schema used a fixed `users.role` (`guardian` or `member`) and enforced one active guardian per member through a unique index on `guardian_member_links(member_user_id)`. That is too restrictive for the product direction.
+Last updated: 2026-05-22
 
-A realistic family flow is:
-- User A directly monitors User B
-- User B later purchases their own plan and directly monitors User C
+## Product Vision
 
-That means one account may be a member in one relationship and a guardian in another. Roles must therefore be relationship-based, not user-based.
+OKSignal is a privacy-focused family safety platform designed to notify trusted guardians when a family member appears inactive for an extended period of time.
 
-## Final product direction
+The product intentionally avoids invasive continuous tracking.
+Instead, the system stores only minimal state required for inactivity detection and alert routing.
 
-### Free
-- A user can create 1 direct care link
-- Only the direct guardian sees that member's status and receives alerts
+---
 
-### Premium
-- A user can create unlimited direct care links
-- Only the direct guardian sees that member's status and receives alerts
+# Core Product Principles
 
-### Family
-- A user can create 1 family group
-- Only the group leader can invite members into the group
-- Group members can view the status of all users in the group from a Group tab
-- Alerts still go only to the group leader through direct guardian-member links
-- Group membership adds visibility, not alert ownership
+1. Privacy-first architecture
+2. Minimal retained user data
+3. Relationship-based visibility
+4. Lightweight mobile background activity
+5. AI-assisted rapid iteration and development
 
-## Core design rules
-1. `users` should not store a fixed guardian/member role
-2. Direct care responsibility stays in `guardian_member_links`
-3. Subscription entitlement is separate from relationship data
-4. Family visibility is separate from alert ownership
-5. Group invites and direct-care invites should be separate token tables
+---
 
-## Required schema changes
+# User Roles
 
-### 1) Remove fixed role from users
-Old:
-- `users.role`
-- `users.subscription_tier`
+Users do not have permanent fixed roles.
 
-New:
-- `users` only stores identity/contact/account status
-- plan moves to `subscriptions`
+A single user may:
+- monitor another user
+- be monitored by another user
+- belong to a family group
+- later become a family group owner
 
-### 2) Allow one user to participate in multiple relationships
-Replace the current one-active-guardian-per-member constraint with one-active-pair-per-link:
-- remove unique index on `guardian_member_links(member_user_id) WHERE status='active'`
-- add unique index on `(guardian_user_id, member_user_id) WHERE status='active'`
+Relationships are modeled independently from account identity.
 
-This allows:
-- User A -> User B
-- User C -> User B
-if you ever want it later, while still preventing duplicate active rows for the same pair.
+---
 
-### 3) Split invites by purpose
-Use:
-- `direct_invites` for direct guardian-member linking
-- `group_invites` for joining a family group
+# Subscription Model
 
-This keeps the flows simpler and avoids overloading a single invite table.
+## Free
+- 1 direct monitored member
+- Fixed inactivity threshold
 
-### 4) Add family group tables
-Add:
-- `groups`
-- `group_members`
-- `group_invites`
+## Premium
+- Unlimited direct monitored members
+- Configurable inactivity threshold
 
-Family group is a visibility container.
-It does not replace direct guardian-member ownership.
+## Family
+- Shared family visibility group
+- Group-wide member visibility
+- Group owner manages invites
 
-### 5) Keep alert pipeline mostly unchanged
-`alerts.guardian_user_id` and `alerts.member_user_id` remain valid.
-For Family, the leader must also have direct guardian-member links to the monitored members whose alerts they should receive.
+---
 
-## Recommended table meanings
+# Inactivity Model
 
-### users
-Identity and account shell only.
+The Android client locally tracks:
+- latest activity timestamp
+- latest heartbeat timestamp
 
-### subscriptions
-Tracks entitlement:
-- free
-- premium
-- family
+Examples of activity:
+- device unlock
+- meaningful foreground usage
+- manual "I'm OK" confirmation
 
-### guardian_member_links
-Direct ownership / alert routing.
+The backend evaluates inactivity using:
+- `last_activity_at`
+- configured inactivity threshold
+- grace period window
 
-### groups
-Family group owned by one leader.
+Heartbeat arrival alone does not automatically imply user activity.
 
-### group_members
-Users visible inside the family group.
+---
 
-### devices
-Last ping, last activity, and latest approximate location.
+# Alert Lifecycle
 
-### alerts
-Resolved / active inactivity alerts.
+## Flow
 
-## API-level behavior
+1. Device becomes inactive
+2. Scheduled backend job detects threshold violation
+3. Alert created
+4. Guardian notified
+5. Alert resolved after activity resumes
 
-### Direct invite acceptance
-1. Inviter creates direct invite
-2. Recipient accepts
-3. Create `guardian_member_links` row
+## Rules
 
-### Group invite acceptance
-1. Family leader creates group invite
-2. Recipient accepts
-3. Create `group_members` row
+- duplicate active alerts prevented
+- alerts maintain active/resolved state
+- alert ownership tied to direct guardian relationship
 
-### Family alert rule
-- Group tab can show everyone's status
-- Alert recipient is still the direct guardian
-- For Family, that direct guardian should be the group leader
+---
 
-## Migration notes from current schema
-From the uploaded schema:
-- remove `users.role`
-- remove `users.subscription_tier`
-- rename `invite_tokens` or replace it with `direct_invites`
-- drop unique index `ux_guardian_member_active_member`
-- create `ux_guardian_member_active_pair`
-- add `subscriptions`, `groups`, `group_members`, `group_invites`
+# Backend Architecture
 
-## Suggested rollout order
-1. Update DB schema
-2. Update invite APIs
-3. Update direct-link creation checks by plan
-4. Add Family group APIs
-5. Add Group tab in UI
-6. Keep inactivity engine unchanged
+## Platform
+
+- Cloudflare Workers
+- Cloudflare D1
+- Scheduled cron jobs
+- REST APIs
+
+## Main Entities
+
+- users
+- subscriptions
+- devices
+- guardian_member_links
+- direct_invites
+- groups
+- group_members
+- alerts
+
+---
+
+# Mobile Architecture
+
+## Android Stack
+
+- Kotlin
+- Jetpack Compose
+- WorkManager
+- DataStore
+- Firebase Cloud Messaging
+
+## Responsibilities
+
+- heartbeat submission
+- local activity tracking
+- guardian/member UI
+- alert handling
+- onboarding flows
+
+---
+
+# Current MVP Scope
+
+## Included
+
+- Guardian/member invite flow
+- Family visibility groups
+- Heartbeat tracking
+- Inactivity detection
+- Alert creation and resolution
+- Android client MVP
+
+## Deferred
+
+- iOS client
+- advanced analytics
+- historical reporting
+- wearable integrations
+- cloud backup
