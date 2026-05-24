@@ -31,6 +31,11 @@ import com.bbksapps.oksignal.ui.member.MemberHomeViewModel
 import com.bbksapps.oksignal.ui.member.MemberHomeViewModelFactory
 import androidx.compose.ui.platform.LocalContext
 import com.bbksapps.oksignal.worker.HeartbeatScheduler
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavGraph(
@@ -74,6 +79,12 @@ fun AppNavGraph(
                 }
             }
             sessionViewModel.consumeSuccess()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            Log.d("OKSignalFCM", "Current FCM token: $token")
         }
     }
 
@@ -141,7 +152,8 @@ fun AppNavGraph(
                 factory = MemberHomeViewModelFactory(
                     appSessionRepository = dependencies.appSessionRepository,
                     heartbeatRepository = dependencies.heartbeatRepository,
-                    deviceStoreRepository = dependencies.deviceStoreRepository
+                    deviceStoreRepository = dependencies.deviceStoreRepository,
+                    needHelpRepository = dependencies.needHelpRepository
                 )
             )
 
@@ -153,7 +165,7 @@ fun AppNavGraph(
                     memberHomeViewModel.checkIn()
                 },
                 onHelpClick = {
-                    // TODO: Need Help flow later
+                    memberHomeViewModel.sendNeedHelp()
                 }
             )
         }
@@ -166,6 +178,32 @@ fun AppNavGraph(
             )
 
             val guardianUiState by guardianHomeViewModel.uiState.collectAsStateWithLifecycle()
+
+            val coroutineScope = rememberCoroutineScope()
+
+            LaunchedEffect(Unit) {
+                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                    coroutineScope.launch {
+                        try {
+                            val appSession = dependencies.appSessionRepository.appSessionState.first()
+                            val deviceId = appSession.device.deviceId
+
+                            Log.d("OKSignalFCM", "Uploading FCM token. deviceId=$deviceId")
+
+                            if (!deviceId.isNullOrBlank()) {
+                                val success = dependencies.fcmTokenRepository.updateFcmToken(
+                                    deviceId = deviceId,
+                                    fcmToken = token
+                                )
+
+                                Log.d("OKSignalFCM", "FCM token upload success=$success")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("OKSignalFCM", "Failed to upload FCM token", e)
+                        }
+                    }
+                }
+            }
 
             GuardianHomeScreen(
                 uiState = guardianUiState,

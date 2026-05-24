@@ -7,10 +7,12 @@ import androidx.compose.ui.platform.LocalContext
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
 import com.bbksapps.oksignal.data.local.repository.AuthRepository
 import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
+import com.bbksapps.oksignal.data.local.repository.FcmTokenRepository
 import com.bbksapps.oksignal.data.local.repository.HeartbeatRepository
 import com.bbksapps.oksignal.data.local.repository.RelationshipStoreRepository
 import com.bbksapps.oksignal.data.local.repository.SessionStoreRepository
 import com.bbksapps.oksignal.data.local.repository.UserStoreRepository
+import com.bbksapps.oksignal.data.local.repository.NeedHelpRepository
 
 data class AppDependencies(
     val deviceStoreRepository: DeviceStoreRepository,
@@ -19,7 +21,9 @@ data class AppDependencies(
     val relationshipStoreRepository: RelationshipStoreRepository,
     val appSessionRepository: AppSessionRepository,
     val authRepository: AuthRepository,
-    val heartbeatRepository: HeartbeatRepository
+    val heartbeatRepository: HeartbeatRepository,
+    val needHelpRepository: NeedHelpRepository,
+    val fcmTokenRepository: FcmTokenRepository
 )
 
 @Composable
@@ -46,6 +50,14 @@ fun rememberAppDependencies(): AppDependencies {
 
     val heartbeatRepository = remember {
         HeartbeatRepository()
+    }
+
+    val needHelpRepository = remember {
+        NeedHelpRepository()
+    }
+
+    val fcmTokenRepository = remember {
+        FcmTokenRepository()
     }
 
     val appSessionRepository = remember(
@@ -78,7 +90,9 @@ fun rememberAppDependencies(): AppDependencies {
             relationshipStoreRepository = relationshipStoreRepository,
             appSessionRepository = appSessionRepository,
             authRepository = authRepository,
-            heartbeatRepository = heartbeatRepository
+            heartbeatRepository = heartbeatRepository,
+            needHelpRepository = needHelpRepository,
+            fcmTokenRepository = fcmTokenRepository
         )
     }
 }

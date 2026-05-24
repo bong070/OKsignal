@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "134047305384",
+    "project_id": "oksignal-c35b9",
+    "storage_bucket": "oksignal-c35b9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:134047305384:android:eb1a0d58f8ae13354efc9d",
+        "android_client_info": {
+          "package_name": "com.bbksapps.oksignal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_pkgcpwo9p3oe6IE9b6_LXqyRhSRU_PQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

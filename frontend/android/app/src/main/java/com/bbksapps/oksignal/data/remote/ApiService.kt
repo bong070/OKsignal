@@ -40,4 +40,14 @@ interface ApiService {
     suspend fun sendHeartbeat(
         @Body request: HeartbeatRequest
     ): HeartbeatResponse
+
+    @POST("members/help")
+    suspend fun sendNeedHelp(
+        @Body request: NeedHelpRequest
+    ): NeedHelpResponse
+
+    @POST("devices/fcm-token")
+    suspend fun updateFcmToken(
+        @Body request: FcmTokenRequest
+    ): FcmTokenResponse
 }

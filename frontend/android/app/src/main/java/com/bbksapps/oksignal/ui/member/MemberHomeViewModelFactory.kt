@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
 import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
 import com.bbksapps.oksignal.data.local.repository.HeartbeatRepository
+import com.bbksapps.oksignal.data.local.repository.NeedHelpRepository
 
 class MemberHomeViewModelFactory(
     private val appSessionRepository: AppSessionRepository,
     private val heartbeatRepository: HeartbeatRepository,
-    private val deviceStoreRepository: DeviceStoreRepository
+    private val deviceStoreRepository: DeviceStoreRepository,
+    private val needHelpRepository: NeedHelpRepository
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -17,7 +19,8 @@ class MemberHomeViewModelFactory(
             return MemberHomeViewModel(
                 appSessionRepository = appSessionRepository,
                 heartbeatRepository = heartbeatRepository,
-                deviceStoreRepository = deviceStoreRepository
+                deviceStoreRepository = deviceStoreRepository,
+                needHelpRepository = needHelpRepository
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

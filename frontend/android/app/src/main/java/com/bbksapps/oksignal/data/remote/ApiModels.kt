@@ -134,3 +134,36 @@ data class HeartbeatResponse(
     val last_activity_at: String? = null,
     val error: String? = null
 )
+
+data class NeedHelpRequest(
+    val device_id: String,
+    val message: String? = null
+)
+
+data class NeedHelpAlertDto(
+    val id: String,
+    val guardian_user_id: String,
+    val member_user_id: String,
+    val reused: Boolean
+)
+
+data class NeedHelpResponse(
+    val success: Boolean,
+    val device_id: String?,
+    val member_user_id: String?,
+    val triggered_at: String?,
+    val alerts: List<NeedHelpAlertDto>?,
+    val error: String? = null
+)
+
+data class FcmTokenRequest(
+    val device_id: String,
+    val fcm_token: String
+)
+
+data class FcmTokenResponse(
+    val success: Boolean,
+    val device_id: String?,
+    val fcm_token_updated: Boolean?,
+    val error: String? = null
+)

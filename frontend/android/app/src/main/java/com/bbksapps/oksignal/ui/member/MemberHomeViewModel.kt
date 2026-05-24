@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bbksapps.oksignal.data.local.repository.AppSessionRepository
 import com.bbksapps.oksignal.data.local.repository.DeviceStoreRepository
 import com.bbksapps.oksignal.data.local.repository.HeartbeatRepository
+import com.bbksapps.oksignal.data.local.repository.NeedHelpRepository
 import com.bbksapps.oksignal.ui.common.UiMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +16,8 @@ import java.time.Instant
 class MemberHomeViewModel(
     private val appSessionRepository: AppSessionRepository,
     private val heartbeatRepository: HeartbeatRepository,
-    private val deviceStoreRepository: DeviceStoreRepository
+    private val deviceStoreRepository: DeviceStoreRepository,
+    private val needHelpRepository: NeedHelpRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MemberHomeUiState())
@@ -60,6 +62,45 @@ class MemberHomeViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isCheckingIn = false,
+                    errorMessage = UiMessage.UNKNOWN_ERROR
+                )
+            }
+        }
+    }
+
+    fun sendNeedHelp() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isSendingHelp = true,
+                errorMessage = null,
+                needHelpSuccess = false
+            )
+
+            try {
+                val appSession = appSessionRepository.appSessionState.first()
+                val deviceId = appSession.device.deviceId
+
+                if (deviceId.isNullOrBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        isSendingHelp = false,
+                        errorMessage = UiMessage.DEVICE_ID_NOT_READY
+                    )
+                    return@launch
+                }
+
+                val success = needHelpRepository.sendNeedHelp(
+                    deviceId = deviceId,
+                    message = "Member requested help"
+                )
+
+                _uiState.value = _uiState.value.copy(
+                    isSendingHelp = false,
+                    needHelpSuccess = success,
+                    errorMessage = if (success) null else UiMessage.UNKNOWN_ERROR
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSendingHelp = false,
                     errorMessage = UiMessage.UNKNOWN_ERROR
                 )
             }
