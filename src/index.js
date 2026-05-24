@@ -1,11 +1,3 @@
-const INVITE_LINK_SCHEME = "oksignal://invite";
-const GROUP_INVITE_LINK_SCHEME = "oksignal://group-invite";
-
-const DEFAULT_INVITE_EXPIRES_HOURS = 168;
-
-const INACTIVITY_THRESHOLD_SECONDS = 4 * 3600;
-const HEARTBEAT_GRACE_SECONDS = 2 * 3600;
-
 export default {
   async fetch(request, env) {
     try {
@@ -68,18 +60,10 @@ export default {
         return handleGetGroupMembers(request, env);
       }
 
-	  // Temporary helper for local MVP testing. Replace with billing webhook later.
-	  if (request.method === "POST" && pathname === "/subscriptions/update") {
-
-	    if (env.ENVIRONMENT === "production") {
-		  return jsonResponse(
-		    { success: false, error: "Not available in production" },
-		    403
-		  );
-	    }
-
-	    return handleSubscriptionUpdate(request, env);
-	  }
+      // Temporary helper for local MVP testing. Replace with billing webhook later.
+      if (request.method === "POST" && pathname === "/subscriptions/update") {
+        return handleSubscriptionUpdate(request, env);
+      }
 
       return json({ success: false, error: "Not Found" }, 404);
     } catch (e) {
@@ -267,7 +251,7 @@ async function handleCreateInvite(request, env) {
       reused: true,
       invite_token_id: existingInvite.id,
       invite_token: existingInvite.token,
-      invite_link: `${INVITE_LINK_SCHEME}?token=${encodeURIComponent(token)}`,
+      invite_link: `oksignal://invite?token=${encodeURIComponent(existingInvite.token)}`,
       expires_at: existingInvite.expires_at,
       created_at: existingInvite.created_at,
     });
@@ -297,7 +281,7 @@ async function handleCreateInvite(request, env) {
     reused: false,
     invite_token_id: tokenId,
     invite_token: token,
-    invite_link: `${INVITE_LINK_SCHEME}?token=${encodeURIComponent(token)}`,
+    invite_link: `oksignal://invite?token=${encodeURIComponent(token)}`,
     expires_at: expiresAt,
     created_at: now,
   });
@@ -450,7 +434,6 @@ async function handleAcceptInvite(request, env) {
       member: serializeUser(member),
       link_created: false,
       member_created: false,
-	  member_user_id: memberUserId,
     });
   }
 
@@ -481,7 +464,6 @@ async function handleAcceptInvite(request, env) {
     member: serializeUser(member),
     link_created: true,
     member_created: memberCreated,
-	member_user_id: memberUserId,
   });
 }
 
@@ -1001,8 +983,8 @@ async function checkInactivityAlerts(env) {
     WHERE gml.status = 'active'
       AND d.last_activity_at IS NOT NULL
       AND d.last_ping_at IS NOT NULL
-      AND (strftime('%s','now') - strftime('%s', d.last_activity_at)) > INACTIVITY_THRESHOLD_SECONDS
-      AND (strftime('%s','now') - strftime('%s', d.last_ping_at)) > HEARTBEAT_GRACE_SECONDS
+      AND (strftime('%s','now') - strftime('%s', d.last_activity_at)) > 4 * 3600
+      AND (strftime('%s','now') - strftime('%s', d.last_ping_at)) > 2 * 3600
       AND a.id IS NULL
   `).all();
 
@@ -1212,7 +1194,7 @@ async function handleCreateGroupInvite(request, env) {
     success: true,
     group_invite_id: inviteId,
     invite_token: token,
-    invite_link: `${GROUP_INVITE_LINK_SCHEME}?token=${encodeURIComponent(token)}`,
+    invite_link: `oksignal://group-invite?token=${encodeURIComponent(token)}`,
     expires_at: expiresAt,
     active_invite_count_for_group: activeInviteCount + 1,
   });
